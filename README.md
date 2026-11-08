@@ -9,6 +9,19 @@
 - **老师作业（不联网）**：老师在「老师工具」里用内置任务布置作业，导出作业文件或作业码（可直接发微信）；孩子导入后，作业期间每天的任务由老师安排；孩子导出学习报告（文件或报告码），老师导入后查看每个孩子的完成天数、打卡、正确率和常错词
 - 新词卡片、错题本、星级、提示 / 挑战模式、英音 / 美音、语速调节
 
+## 语音
+
+所有单词、句子、字母和鼓励语都是提前生成好的 AI 录音（MiniMax `speech-2.6-hd`，声音 `English_Kind-heartedGirl` 温柔女声），放在 `audio/` 文件夹里；
+「很慢 / 慢」是播放时放慢、音调不变。某段录音缺失或加载失败时，会自动改用设备自带朗读。
+
+加了新单词后，重新生成缺的录音：
+
+```bash
+MINIMAX_API_KEY=你的密钥 python3 tools/gen_audio.py          # 只生成缺的，并更新 index.html 里的录音清单
+python3 tools/gen_audio.py --list                            # 看看会读哪些内容
+MINIMAX_API_KEY=... python3 tools/gen_audio.py --redo "A."   # 某段读得不好，重新生成
+```
+
 学习记录保存在浏览器本地（localStorage），换设备或清除浏览器数据会重新开始。
 
 在线版：https://claude.ai/artifact/J5ewfMb2o7SnMU8fLUxymM

@@ -421,7 +421,12 @@ function finishTask(id,res){const x=tasks.list.find(t=>t.id===id);if(x&&!x.done)
 const allDone=()=>tasks.list.length&&tasks.list.every(t=>t.done);
 
 /* ================= 声音 ================= */
-let enVoice=null, voiceOK=false, screen='home';
+/* 真人感的 AI 录音（MiniMax，温柔女声）放在 audio/ 里，由 tools/gen_audio.py 生成；
+   没有录音的内容才用设备自带朗读 */
+const CLIPS=new Set(/*CLIPS*/""/*END*/.split(',').filter(Boolean));
+const HAS_CLIPS=CLIPS.size>0;
+const slug=t=>String(t).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+let enVoice=null, voiceOK=HAS_CLIPS, screen='home';
 let accent=store.get('accent','GB'); // KET 是剑桥考试，默认英音
 function loadVoices(){
   if(!('speechSynthesis' in window)) return;
@@ -429,24 +434,40 @@ function loadVoices(){
   const want=new RegExp('en[-_]'+accent,'i');
   enVoice=vs.find(v=>want.test(v.lang)&&/Google|Samantha|Daniel|Serena|Kate|Karen|Natural/i.test(v.name))
         ||vs.find(v=>want.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null;
-  const was=voiceOK; voiceOK=!!enVoice||vs.length===0; // iPhone 一开始列表可能是空的
+  const was=voiceOK; voiceOK=HAS_CLIPS||!!enVoice||vs.length===0; // iPhone 一开始列表可能是空的
   if(was!==voiceOK&&screen==='home') home();
 }
-const SPEEDS=[{name:'很慢',rate:.5},{name:'慢',rate:.7},{name:'正常',rate:.9}];
+const SPEEDS=[{name:'很慢',rate:.5,prate:.7},{name:'慢',rate:.7,prate:.85},{name:'正常',rate:.9,prate:1}];
 let speedIdx=store.get('speed',1);
 let hintMode=store.get('hint',true);
 /* 朗读必须在点按那一刻直接开始（iPhone 要求），不用延时 */
+const AUD=new Audio();AUD.preload='auto';
+try{AUD.preservesPitch=true;AUD.webkitPreservesPitch=true;}catch(e){}
+let audQ=[],audTimer=null;
+function nextClip(){
+  if(!audQ.length)return;
+  const t=audQ.shift(),r=SPEEDS[speedIdx].prate;
+  AUD.onerror=()=>{const rest=[t,...audQ];audQ=[];ttsSpeak(rest);}; // 录音加载失败就改用设备朗读
+  AUD.src='audio/'+slug(t)+'.mp3';AUD.defaultPlaybackRate=r;AUD.playbackRate=r;
+  AUD.play().catch(()=>{});
+}
+AUD.onended=()=>{if(audQ.length)audTimer=setTimeout(nextClip,350);};
+/* 朗读必须在点按那一刻直接开始（iPhone 要求），所以第一段不延时 */
 function speak(text){
-  if(!voiceOK||!('speechSynthesis' in window)) return;
-  stopSpeech();
   const parts=Array.isArray(text)?text:[text];
+  stopSpeech();
+  if(HAS_CLIPS&&parts.every(p=>CLIPS.has(slug(p)))){audQ=parts.slice();nextClip();return;}
+  ttsSpeak(parts);
+}
+function ttsSpeak(parts){
+  if(!('speechSynthesis' in window)||(!enVoice&&!voiceOK)) return;
   try{
     parts.forEach(t=>{const u=new SpeechSynthesisUtterance(t);u.lang=enVoice?enVoice.lang:('en-'+accent);
       u.rate=SPEEDS[speedIdx].rate;if(enVoice)u.voice=enVoice;speechSynthesis.speak(u);});
     if(speechSynthesis.paused) speechSynthesis.resume();
   }catch(e){}
 }
-function stopSpeech(){try{const ss=window.speechSynthesis;if(ss&&(ss.speaking||ss.pending))ss.cancel();}catch(e){}}
+function stopSpeech(){audQ=[];clearTimeout(audTimer);try{AUD.pause();}catch(e){}try{const ss=window.speechSynthesis;if(ss&&(ss.speaking||ss.pending))ss.cancel();}catch(e){}}
 const sayLetter=l=>l+'.';
 function sayItem(it){
   if(it.cat==='letters') return [sayLetter(it.w),`${it.w} is for ${it.z}.`];
@@ -466,7 +487,7 @@ function keepPlaybackSession(){
     silentEl.loop=true;silentEl.setAttribute('playsinline','');silentEl.play().catch(()=>{});
   }catch(e){}
 }
-function unlockAudio(){keepPlaybackSession();try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();}catch(e){}}
+function unlockAudio(){if(HAS_CLIPS){try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}}else keepPlaybackSession();try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();}catch(e){}}
 function beep(f,t0,d,type='sine',vol=.15){const o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.value=f;
   g.gain.setValueAtTime(vol,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g).connect(actx.destination);o.start(t0);o.stop(t0+d);}
 function sfx(k){if(!actx)return;const n=actx.currentTime;
@@ -529,12 +550,13 @@ function home(){
       <div class="speedrow">🧒 孩子名字：<input id="kname" class="inp" value="${esc(kidName)}" placeholder="会写在学习报告上" maxlength="20" style="flex:1"></div>
       <div class="speedrow">📋 每天任务量：${LEVELS.map((l,i)=>`<button class="spd ${i===level?'on':''}" data-lv="${i}">${l.name}（${l.n} 个）</button>`).join('')}</div>
       <div class="speedrow">🖼️ 模式：<button class="spd ${hintMode?'on':''}" data-hint="1">提示（自动朗读）</button><button class="spd ${hintMode?'':'on'}" data-hint="0">挑战</button></div>
-      ${voiceOK?`<div class="speedrow">🗣️ 口音：<button class="spd ${accent==='GB'?'on':''}" data-acc="GB">英音</button><button class="spd ${accent==='US'?'on':''}" data-acc="US">美音</button></div>
-      <div class="speedrow">🔊 语速：${SPEEDS.map((s,i)=>`<button class="spd ${i===speedIdx?'on':''}" data-spd="${i}">${s.name}</button>`).join('')}<button class="spd" id="tst">试听</button></div>`:''}
+      ${HAS_CLIPS?'<div class="speedrow">🗣️ 声音：AI 录音 · 温柔女声</div>':''}
+      ${voiceOK&&!HAS_CLIPS?`<div class="speedrow">🗣️ 口音：<button class="spd ${accent==='GB'?'on':''}" data-acc="GB">英音</button><button class="spd ${accent==='US'?'on':''}" data-acc="US">美音</button></div>`:''}
+      ${voiceOK?`<div class="speedrow">🔊 语速：${SPEEDS.map((s,i)=>`<button class="spd ${i===speedIdx?'on':''}" data-spd="${i}">${s.name}</button>`).join('')}<button class="spd" id="tst">试听</button></div>`:''}
       <div class="speedrow"><button class="spd" id="teach">👩‍🏫 老师工具：布置作业 / 查看报告</button></div>
       <p class="foot" style="text-align:left">学习记录只保存在这台设备的浏览器里。换手机或清除浏览器数据后会从头开始。<br>改了任务量，点“换一批任务”就会按新的数量生成（已完成的会保留）。</p>
     </details>
-    ${IS_IOS&&voiceOK?`<div class="mutetip">${MUTE_TIP}</div>`:''}
+    ${IS_IOS&&voiceOK&&!HAS_CLIPS?`<div class="mutetip">${MUTE_TIP}</div>`:''}
     <p class="foot">${voiceOK?'':'🔇 没找到英文语音，听力题已自动关闭<br>'}答错的题会自动收进错题本，复习答对就会移出</p>`;
   app.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>startLesson(b.dataset.mode));
   app.querySelectorAll('[data-task]').forEach(b=>b.onclick=()=>startTask(b.dataset.task));
@@ -542,7 +564,7 @@ function home(){
   app.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{level=+b.dataset.lv;store.set('level',level);home();});
   app.querySelectorAll('[data-hint]').forEach(b=>b.onclick=()=>{hintMode=b.dataset.hint==='1';store.set('hint',hintMode);home();});
   app.querySelectorAll('[data-acc]').forEach(b=>b.onclick=()=>{accent=b.dataset.acc;store.set('accent',accent);loadVoices();home();speak('Hello! Nice to meet you.');});
-  app.querySelectorAll('[data-spd]').forEach(b=>b.onclick=()=>{speedIdx=+b.dataset.spd;store.set('speed',speedIdx);home();speak('apple, banana, orange');});
+  app.querySelectorAll('[data-spd]').forEach(b=>b.onclick=()=>{speedIdx=+b.dataset.spd;store.set('speed',speedIdx);home();speak(['apple','banana','orange']);});
   const tst=document.getElementById('tst');if(tst)tst.onclick=()=>speak('Hello! Nice to meet you.');
   const rg=document.getElementById('regen');if(rg)rg.onclick=()=>{generateTasks(true);home();};
   document.getElementById('cal').onclick=()=>calendar();
@@ -585,7 +607,7 @@ function checkinCard(fresh){
     <div class="rbtns" style="margin-top:14px"><button class="big blue" id="cal">📅 查看打卡日历</button><button class="big green" id="home">返回首页</button></div>`;
   document.getElementById('back').onclick=home;document.getElementById('home').onclick=home;
   document.getElementById('cal').onclick=()=>calendar();
-  if(fresh){sfx('win');confetti();speak(s>1?`Well done! ${s} days in a row!`:'Well done!');}
+  if(fresh){sfx('win');confetti();speak(s>1?'Great job! See you tomorrow!':'Well done!');}
 }
 let calMonth=null;
 function calendar(){
@@ -660,7 +682,7 @@ function makeQ(it,retry=false,forceType){
 }
 function promptHTML(q){
   const it=q.it, spk=voiceOK?'<button class="minispk" id="spk">🔊 听一听</button>':'';
-  const mute=IS_IOS?`<div class="mutetip small">${MUTE_TIP}</div>`:'';
+  const mute=IS_IOS&&!HAS_CLIPS?`<div class="mutetip small">${MUTE_TIP}</div>`:'';
   switch(q.type){
     case 'p2w': return `<div class="qlabel">这是什么？选出英文单词</div><div class="prompt"><div class="pic">${it.e}</div>${hintMode?`<div class="hint">${esc(it.z)}</div>`:''}</div>`;
     case 'w2p': return `<div class="qlabel">读一读，选出对的图</div><div class="prompt"><div class="wordbig en">${esc(it.w)}</div>${spk}</div>`;
