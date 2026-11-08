@@ -199,6 +199,34 @@ details.set summary{font-weight:800;cursor:pointer}
 .badge.lock{opacity:.4;filter:grayscale(1)}
 .legend{display:flex;gap:14px;justify-content:center;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
 
+/* homework & teacher */
+.hwban{background:var(--blue-bg);border:2px solid var(--blue);border-radius:14px;padding:8px 12px;font-weight:800;color:var(--blue-d);font-size:14px;margin-bottom:6px}
+.hwban .hwnote{font-weight:600;color:var(--text);margin-top:4px;line-height:1.5}
+.hwinfo{font-size:13px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5}
+.inp,select.inp,textarea.inp{font:inherit;font-size:16px;color:var(--text);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}
+textarea.inp{width:100%;min-height:84px;resize:vertical;font-size:14px}
+.form label{display:block;font-weight:800;font-size:14px;margin-top:12px}
+.form label .inp{display:block;width:100%;margin-top:4px;font-weight:400}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sec2{font-weight:800;font-size:14px;margin:16px 0 6px}
+.tpls{display:flex;gap:8px;flex-wrap:wrap}
+.trow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:2px dashed var(--line)}
+.trow .inp{font-size:15px;padding:6px 8px}
+.trow .grow{flex:1;min-width:140px}
+.del{border:none;background:none;font-size:20px;color:var(--red);padding:4px 6px;margin-left:auto}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0 4px}
+.tabs button{border:2px solid var(--line);background:var(--card);border-radius:14px;padding:10px;font-weight:800;font-size:15px}
+.tabs button.on{border-color:var(--blue);background:var(--blue-bg);color:var(--blue-d)}
+.out{margin-top:12px}
+.rcard{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 14px;margin-top:10px}
+.rcard .rn{font-size:18px;font-weight:800}
+.rcard .rs{font-size:13px;color:var(--muted)}
+.rcard .rg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;text-align:center}
+.rcard .rg div{background:var(--bg);border-radius:10px;padding:6px 2px;font-size:11px;color:var(--muted)}
+.rcard .rg b{display:block;font-size:17px;color:var(--text)}
+.dots{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px;font-size:15px}
+.warn{color:var(--red-d);font-weight:700;font-size:13px;margin-top:6px}
+.prev{background:var(--bg);border-radius:14px;padding:10px 12px;margin-top:12px;line-height:1.7;font-size:15px}
 .confetti{position:fixed;top:-40px;font-size:26px;pointer-events:none;animation:fall linear forwards;z-index:9}
 @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
 </style>
@@ -295,6 +323,9 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const todayStr=()=>ymd(new Date());
 const dayBefore=s=>{const [y,m,d]=s.split('-').map(Number);return ymd(new Date(y,m-1,d-1));};
+const addDays=(s,n)=>{const [y,m,d]=s.split('-').map(Number);return ymd(new Date(y,m-1,d+n));};
+const diffDays=(a,b)=>{const u=s=>{const [y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d);};return Math.round((u(b)-u(a))/864e5);};
+const fmtMD=s=>{const [,m,d]=s.split('-');return `${+m}月${+d}日`;};
 
 /* ================= 存档（只存在这台设备的浏览器里） ================= */
 const store={
@@ -306,6 +337,8 @@ let prog=store.get('prog',{}), mistakes=store.get('mistakes',{}), xp=store.get('
     today=store.get('today',{date:'',lessons:0,xp:0,newWords:0}),
     tasks=store.get('tasks',{date:'',regen:0,list:[]}),
     level=store.get('level',1);
+let homework=store.get('hw',null), hist=store.get('hist',{}), kidName=store.get('name',''),
+    reports=store.get('reports',{}), draft=store.get('draft',null);
 function curToday(){const t=todayStr();if(today.date!==t)today={date:t,lessons:0,xp:0,newWords:0};return today;}
 function mistakeKeys(){return Object.entries(mistakes).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]).map(([k])=>k);}
 const byKey={};ALL.forEach(i=>byKey[i.key]=i);
@@ -327,6 +360,7 @@ function generateTasks(keepDone){
   const t=todayStr();
   if(tasks.date!==t){tasks={date:t,regen:0,list:[]};keepDone=false;}
   else if(keepDone) tasks.regen++;
+  delete tasks.hw;
   const r=rng(hash(t+'#'+tasks.regen));
   const L=LEVELS[level];
   const list=keepDone?tasks.list.filter(x=>x.done):[];
@@ -352,20 +386,38 @@ function generateTasks(keepDone){
   if(((prog.letters||{}).stars||0)>=3&&!has('cat','letters')) cand.push({p:20,t:makeTask('cat',{cat:'letters'})});
   cand.sort((a,b)=>b.p-a.p);
   for(const c of cand){if(list.length>=L.n)break;list.push(c.t);}
-  tasks.list=list; store.set('tasks',tasks);
+  tasks.list=list; saveTasks();
 }
-function ensureTasks(){if(tasks.date!==todayStr()||!tasks.list.length)generateTasks(false);}
+/* 每天的任务都记进 hist，导出学习报告时用 */
+function saveTasks(){
+  store.set('tasks',tasks);
+  if(tasks.date){hist[tasks.date]={hw:tasks.hw||null,list:tasks.list.map(x=>({t:taskInfo(x).t,done:x.done,acc:x.acc,stars:x.stars}))};store.set('hist',hist);}
+}
+function hwEnd(hw){return addDays(hw.start,hw.days-1);}
+function activeHw(){const t=todayStr();return homework&&t>=homework.start&&t<=hwEnd(homework)?homework:null;}
+const hwDay=()=>diffDays(homework.start,todayStr())+1;
+function ensureTasks(){
+  const hw=activeHw(),t=todayStr();
+  if(hw){ // 老师作业期间：每天的任务由作业决定
+    if(tasks.date!==t||tasks.hw!==hw.id){
+      tasks={date:t,regen:0,hw:hw.id,list:hw.tasks.map((x,i)=>Object.assign({},x,{id:hw.id+'-'+i,done:false}))};saveTasks();}
+    return;
+  }
+  if(tasks.date!==t||!tasks.list.length||tasks.hw)generateTasks(false);
+}
 function taskInfo(x){
   switch(x.kind){
-    case 'new': return {e:CATS[x.cat].emoji,t:`认识 ${x.n} 个新单词`,s:`${CATS[x.cat].name} · 先看卡片，再做小测`};
+    case 'new': return learnedIn(x.cat)>=ITEMS[x.cat].length&&!x.done
+      ?{e:CATS[x.cat].emoji,t:`复习 ${x.n} 个单词`,s:`${CATS[x.cat].name} · 这一组已经全学过啦`}
+      :{e:CATS[x.cat].emoji,t:`认识 ${x.n} 个新单词`,s:`${CATS[x.cat].name} · 先看卡片，再做小测`};
     case 'cat': return {e:CATS[x.cat].emoji,t:`闯一关：${CATS[x.cat].name}`,s:`${LESSON_LEN} 道题，争取 3 颗星`};
-    case 'review': return {e:'📒',t:'错题本复习',s:`${mistakeKeys().length} 个错题，答对就移出`};
+    case 'review': {const m=mistakeKeys().length;return {e:'📒',t:'错题本复习',s:m?`${m} 个错题，答对就移出`:'暂时没有错题，就做一次混合练习'};}
     case 'listen': return {e:'🎧',t:'听力挑战',s:'听单词，选出对的图'};
     case 'mix': return {e:'🎲',t:'混合挑战',s:'所有学过的内容随机出题'};
-    case 'offline': return {e:x.e,t:x.t,s:x.s+' · 做完请家长打勾'};
+    case 'offline': return {e:x.e||'📝',t:x.t,s:(x.s?x.s+' · ':'')+'做完请家长打勾'};
   }
 }
-function finishTask(id){const x=tasks.list.find(t=>t.id===id);if(x&&!x.done){x.done=true;store.set('tasks',tasks);return x;}return null;}
+function finishTask(id,res){const x=tasks.list.find(t=>t.id===id);if(x&&!x.done){x.done=true;if(res){x.acc=res.acc;x.stars=res.stars;}saveTasks();return x;}return null;}
 const allDone=()=>tasks.list.length&&tasks.list.every(t=>t.done);
 
 /* ================= 声音 ================= */
@@ -436,12 +488,18 @@ function clearSheets(){document.querySelectorAll('.sheet').forEach(s=>s.remove()
 function home(){
   stopSpeech();clearSheets();screen='home';ensureTasks();
   const done=tasks.list.filter(t=>t.done).length, n=tasks.list.length, checked=!!checkins[todayStr()];
-  const m=mistakeKeys().length;
+  const m=mistakeKeys().length, hw=activeHw(), t0=todayStr();
+  let hwLine='';
+  if(!hw&&homework){
+    if(t0<homework.start) hwLine=`📮 老师作业「${esc(homework.title)}」${fmtMD(homework.start)} 开始，到时任务会自动换成老师布置的`;
+    else hwLine=`📮 老师作业「${esc(homework.title)}」已经结束，记得点「学习报告」发给老师`;
+  }
   app.innerHTML=`${topbar()}
     <h1 class="title en">English Adventure</h1>
     <p class="sub">英语小探险 · 每天完成任务就能打卡</p>
     <section class="panel" aria-label="今日任务">
       <div class="phead"><h2>📋 今日任务</h2><span class="hint">${done}/${n} 完成</span></div>
+      ${hw?`<div class="hwban">📮 老师作业 · ${esc(hw.title)} · 第 ${hwDay()}/${hw.days} 天${hw.note?`<div class="hwnote">“${esc(hw.note)}”${hw.teacher?' —— '+esc(hw.teacher):''}</div>`:''}</div>`:''}
       <div class="pbar"><i style="width:${n?done/n*100:0}%"></i></div>
       ${tasks.list.map(x=>{const f=taskInfo(x);return `<div class="task ${x.done?'done':''}">
         <div class="ti">${f.e}</div><div class="tt"><b>${esc(f.t)}</b><span>${esc(f.s)}</span></div>
@@ -450,7 +508,9 @@ function home(){
       ${checked?`<button class="big green checkin" id="showcard">🏅 今天已打卡 · 查看打卡卡片</button>`
         :allDone()?`<button class="big orange checkin" id="checkin">✅ 任务全部完成，点我打卡！</button>`
         :`<p class="note">还差 ${n-done} 个任务就能打卡啦</p>`}
-      <div class="prow">${allDone()?'':'<button class="ghost" id="regen">🎲 换一批任务</button>'}<button class="ghost" id="cal">📅 打卡日历</button></div>
+      <div class="prow">${allDone()||hw?'':'<button class="ghost" id="regen">🎲 换一批任务</button>'}<button class="ghost" id="cal">📅 打卡日历</button></div>
+      <div class="prow"><button class="ghost" id="imp">📥 导入老师作业</button><button class="ghost" id="exp">📤 学习报告</button></div>
+      ${hwLine?`<p class="hwinfo">${hwLine}</p>`:''}
     </section>
 
     <div class="sec">🗺️ 自由练习</div>
@@ -466,10 +526,12 @@ function home(){
     </div>
 
     <details class="set"><summary>⚙️ 家长设置</summary>
+      <div class="speedrow">🧒 孩子名字：<input id="kname" class="inp" value="${esc(kidName)}" placeholder="会写在学习报告上" maxlength="20" style="flex:1"></div>
       <div class="speedrow">📋 每天任务量：${LEVELS.map((l,i)=>`<button class="spd ${i===level?'on':''}" data-lv="${i}">${l.name}（${l.n} 个）</button>`).join('')}</div>
       <div class="speedrow">🖼️ 模式：<button class="spd ${hintMode?'on':''}" data-hint="1">提示（自动朗读）</button><button class="spd ${hintMode?'':'on'}" data-hint="0">挑战</button></div>
       ${voiceOK?`<div class="speedrow">🗣️ 口音：<button class="spd ${accent==='GB'?'on':''}" data-acc="GB">英音</button><button class="spd ${accent==='US'?'on':''}" data-acc="US">美音</button></div>
       <div class="speedrow">🔊 语速：${SPEEDS.map((s,i)=>`<button class="spd ${i===speedIdx?'on':''}" data-spd="${i}">${s.name}</button>`).join('')}<button class="spd" id="tst">试听</button></div>`:''}
+      <div class="speedrow"><button class="spd" id="teach">👩‍🏫 老师工具：布置作业 / 查看报告</button></div>
       <p class="foot" style="text-align:left">学习记录只保存在这台设备的浏览器里。换手机或清除浏览器数据后会从头开始。<br>改了任务量，点“换一批任务”就会按新的数量生成（已完成的会保留）。</p>
     </details>
     ${IS_IOS&&voiceOK?`<div class="mutetip">${MUTE_TIP}</div>`:''}
@@ -484,6 +546,10 @@ function home(){
   const tst=document.getElementById('tst');if(tst)tst.onclick=()=>speak('Hello! Nice to meet you.');
   const rg=document.getElementById('regen');if(rg)rg.onclick=()=>{generateTasks(true);home();};
   document.getElementById('cal').onclick=()=>calendar();
+  document.getElementById('imp').onclick=()=>importHw();
+  document.getElementById('exp').onclick=()=>exportReport();
+  document.getElementById('teach').onclick=()=>teacher('make');
+  document.getElementById('kname').onchange=e=>{kidName=e.target.value.trim().slice(0,20);store.set('name',kidName);};
   const ci=document.getElementById('checkin');if(ci)ci.onclick=doCheckin;
   const sc=document.getElementById('showcard');if(sc)sc.onclick=()=>checkinCard(false);
   if(details_open) app.querySelector('details.set').open=true;
@@ -635,6 +701,7 @@ function startLesson(mode,taskId){
   unlockAudio();loadVoices();
   let pool,force;
   if(mode==='review') pool=mistakeKeys().map(k=>byKey[k]).filter(Boolean).slice(0,LESSON_LEN);
+  if(mode==='review'&&!pool.length) pool=shuffle(learnedPool().slice()).slice(0,LESSON_LEN); // 没有错题就做混合练习
   else if(mode==='mix') pool=shuffle(learnedPool().slice()).slice(0,LESSON_LEN);
   else if(mode==='listen'){pool=shuffle(learnedPool().slice()).slice(0,LESSON_LEN);force='listen';}
   else {
@@ -739,7 +806,7 @@ function finish(){
   const bonus=acc===1?20:5;L.gained+=bonus;xp+=L.gained;store.set('xp',xp);
   if(CATS[L.mode]&&!L.learn){const p=prog[L.mode]||{stars:0,plays:0};p.stars=Math.max(p.stars,stars);p.plays++;prog[L.mode]=p;store.set('prog',prog);}
   const td=curToday();td.lessons++;td.xp+=L.gained;store.set('today',td);
-  const task=L.taskId?finishTask(L.taskId):null;
+  const task=L.taskId?finishTask(L.taskId,{acc:Math.round(acc*100),stars}):null;
   const left=tasks.list.filter(t=>!t.done).length;
   const emo=stars===3?'🏆':stars===2?'🎉':'💪';
   const msg=stars===3?'全对，太厉害了！':stars===2?'很棒，再接再厉！':'坚持练习，下次更好！';
@@ -762,6 +829,269 @@ function confetti(){
   for(let i=0;i<32;i++){const s=document.createElement('div');s.className='confetti';s.textContent=e[i%e.length];
     s.style.left=Math.random()*100+'vw';s.style.animationDuration=(1.8+Math.random()*1.8)+'s';s.style.animationDelay=Math.random()*.6+'s';
     document.body.appendChild(s);setTimeout(()=>s.remove(),4500);}
+}
+
+/* ================= 作业与报告：只用文件 / 作业码传递，不联网 ================= */
+const KINDS={new:'学新单词',cat:'主题闯关',listen:'听力挑战',review:'错题复习',mix:'混合挑战',offline:'线下任务（自己写）'};
+const TEMPLATES=[
+  {name:'🔤 字母起步',tasks:[{kind:'cat',cat:'letters'},{kind:'new',cat:'hello',n:3},{kind:'offline',t:'唱一遍 ABC 字母歌',s:'边唱边指字母'}]},
+  {name:'📚 学新词',tasks:[{kind:'new',cat:'animals',n:4},{kind:'cat',cat:'animals'},{kind:'listen'}]},
+  {name:'🔁 复习巩固',tasks:[{kind:'review'},{kind:'mix'},{kind:'listen'}]},
+  {name:'🌈 综合',tasks:[{kind:'new',cat:'colors',n:3},{kind:'cat',cat:'letters'},{kind:'listen'},{kind:'offline',t:'用英语说出 5 种颜色',s:'指着身边的东西说'}]}
+];
+const clip=(v,n)=>String(v==null?'':v).replace(/[\u0000-\u001f]/g,' ').trim().slice(0,n);
+const SALT='ea-v1';
+function sign(o){const c=Object.assign({},o);delete c.sig;delete c.tampered;return hash(JSON.stringify(c)+SALT).toString(36);}
+function encodeCode(prefix,o){return prefix+btoa(unescape(encodeURIComponent(JSON.stringify(o))));}
+function decodeAny(text){
+  text=String(text||'').trim(); if(!text) throw new Error('内容是空的');
+  const m=text.match(/EA-(?:HW|RP):\s*([A-Za-z0-9+/=]+)/);
+  try{
+    if(m) return JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+    const j=text.indexOf('{'); if(j<0) throw 0; return JSON.parse(text.slice(j));
+  }catch(e){throw new Error('看不懂这段内容，请确认复制完整');}
+}
+function cleanHw(o){
+  if(!o||o.type!=='hw'||!Array.isArray(o.tasks)) throw new Error('这不是作业（可能是学习报告？）');
+  const tasks=o.tasks.slice(0,6).map(x=>{
+    if(!x||!KINDS[x.kind]) return null; const t={kind:x.kind};
+    if(x.kind==='new'||x.kind==='cat'){if(!CATS[x.cat]||(x.kind==='new'&&x.cat==='letters'))return null;t.cat=x.cat;}
+    if(x.kind==='new') t.n=Math.max(1,Math.min(8,Math.round(+x.n)||4));
+    if(x.kind==='offline'){t.t=clip(x.t,40);if(!t.t)return null;t.s=clip(x.s,40);t.e='📝';}
+    return t;}).filter(Boolean);
+  if(!tasks.length) throw new Error('作业里没有任务');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(o.start||'')) throw new Error('开始日期不对');
+  const hw={type:'hw',v:1,title:clip(o.title,30)||'英语作业',teacher:clip(o.teacher,20),note:clip(o.note,200),
+    start:o.start,days:Math.max(1,Math.min(60,Math.round(+o.days)||7)),tasks};
+  hw.id=clip(o.id,40).replace(/[^\w-]/g,'')||('hw'+hash(JSON.stringify(hw)).toString(36));
+  return hw;
+}
+function cleanReport(o){
+  if(!o||o.type!=='report'||!o.hw||!Array.isArray(o.days)) throw new Error('这不是学习报告（可能是作业？）');
+  const r={type:'report',v:1,name:clip(o.name,20)||'未署名',
+    hw:{id:clip(o.hw.id,40),title:clip(o.hw.title,30),start:/^\d{4}-\d{2}-\d{2}$/.test(o.hw.start||'')?o.hw.start:todayStr(),days:Math.max(1,Math.min(60,+o.hw.days||7))},
+    gen:+o.gen||0,words:+o.words||0,streak:+o.streak||0,xp:+o.xp||0,
+    days:o.days.slice(0,60).map(d=>({d:clip(d.d,10),done:+d.done||0,total:+d.total||0,ci:!!d.ci,acc:d.acc==null?null:+d.acc})),
+    mis:(Array.isArray(o.mis)?o.mis:[]).slice(0,8).map(x=>[clip(x[0],30),+x[1]||0])};
+  r.tampered=sign(o)!==o.sig;
+  return r;
+}
+let dlApi=null;
+(async()=>{try{if(window.claude&&typeof claude.use==='function')dlApi=await claude.use('downloads');}catch(e){}})();
+async function saveFile(name,obj){
+  const data=JSON.stringify(obj,null,1);
+  if(dlApi){try{await dlApi.save({filename:name,data});return '已保存';}catch(e){if(e&&e.code==='declined')return '已取消';}}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download=name;
+    document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},3000);return '已开始下载';}
+  catch(e){return '这里没法下载文件，请改用「作业码 / 报告码」';}
+}
+async function copyFrom(ta){
+  try{await navigator.clipboard.writeText(ta.value);return true;}catch(e){}
+  try{ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);return document.execCommand('copy');}catch(e){return false;}
+}
+function codeBox(text,label){
+  return `<div class="out"><textarea class="inp" readonly id="codeout">${esc(text)}</textarea>
+    <div class="prow"><button class="big blue" id="copy" style="flex:1">📋 复制${label}</button></div>
+    <p class="note" id="copymsg">复制后直接粘贴到微信发出去就行</p></div>`;
+}
+function wireCode(){
+  const b=document.getElementById('copy');if(!b)return;
+  b.onclick=async()=>{const ok=await copyFrom(document.getElementById('codeout'));
+    document.getElementById('copymsg').textContent=ok?'✅ 已复制，去微信粘贴吧':'没能自动复制：请长按上面的文字，全选后复制';};
+}
+function pickFile(multi,cb){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json,text/plain';inp.multiple=!!multi;
+  inp.onchange=()=>{const fs=[...inp.files];Promise.all(fs.map(f=>f.text?f.text():new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsText(f);})))
+    .then(cb);};
+  inp.click();
+}
+function subHeader(title){return `<div class="lhead"><button class="xbtn" id="back" aria-label="返回">✕</button><div style="flex:1;font-weight:800;font-size:18px">${title}</div></div>`;}
+function hwPreview(hw){
+  return `<div class="prev"><b>${esc(hw.title)}</b>${hw.teacher?' · '+esc(hw.teacher):''}<br>
+    📅 ${fmtMD(hw.start)} – ${fmtMD(hwEnd(hw))}，共 ${hw.days} 天<br>
+    每天的任务：<br>${hw.tasks.map(x=>{const f=taskInfo(x);return '　'+f.e+' '+esc(f.t);}).join('<br>')}
+    ${hw.note?`<br>💬 ${esc(hw.note)}`:''}</div>`;
+}
+
+/* ---------- 孩子端：导入作业 ---------- */
+function importHw(){
+  stopSpeech();clearSheets();screen='import';
+  app.innerHTML=`${subHeader('📥 导入老师作业')}
+    <p class="hint" style="margin-top:14px">老师发来的可以是一个 <b>作业文件</b>，也可以是一段 <b>作业码</b>（以 EA-HW: 开头的文字）。</p>
+    <div class="row1"><button class="big blue" id="file">📂 选择作业文件</button></div>
+    <div class="sec2">或者粘贴老师发来的整段文字</div>
+    <textarea class="inp" id="paste" placeholder="【英语小探险·老师作业】…&#10;EA-HW:……"></textarea>
+    <div class="row1"><button class="big green" id="go">识别作业</button></div>
+    <div id="res"></div>
+    ${homework?`<div class="sec2">当前的作业</div>${hwPreview(homework)}<div class="row1"><button class="big gray" id="rm">删除当前作业</button></div>`:''}`;
+  document.getElementById('back').onclick=home;
+  const show=text=>{
+    const res=document.getElementById('res');
+    let hw;try{hw=cleanHw(decodeAny(text));}catch(e){res.innerHTML=`<p class="warn">❌ ${esc(e.message)}</p>`;return;}
+    const t=todayStr();
+    res.innerHTML=`${hwPreview(hw)}
+      ${hwEnd(hw)<t?'<p class="warn">⚠️ 这份作业的日期已经过了</p>':''}
+      ${homework&&homework.id!==hw.id?'<p class="warn">导入后会替换现在的作业「'+esc(homework.title)+'」</p>':''}
+      ${homework&&homework.id===hw.id?'<p class="hint">这份作业已经导入过了，再导入会更新内容，已完成的记录不受影响</p>':''}
+      <div class="row1"><button class="big orange" id="ok">✅ 确认导入</button></div>`;
+    document.getElementById('ok').onclick=()=>{
+      homework=hw;store.set('hw',homework);
+      if(tasks.hw===hw.id&&tasks.date===t){ // 同一份作业更新：保留今天已完成的
+        const doneIdx=new Set(tasks.list.filter(x=>x.done).map(x=>x.id));
+        tasks.list=hw.tasks.map((x,i)=>Object.assign({},x,{id:hw.id+'-'+i,done:doneIdx.has(hw.id+'-'+i)}));saveTasks();
+      }else if(t>=hw.start&&t<=hwEnd(hw)){tasks.date='';}
+      unlockAudio();sfx('win');home();
+    };
+  };
+  document.getElementById('file').onclick=()=>pickFile(false,txts=>show(txts[0]));
+  document.getElementById('go').onclick=()=>show(document.getElementById('paste').value);
+  const rm=document.getElementById('rm');
+  if(rm)rm.onclick=()=>{if(!confirm('确定删除当前作业吗？已完成的记录会保留。'))return;homework=null;store.set('hw',null);if(tasks.hw)tasks.date='';home();};
+}
+
+/* ---------- 孩子端：导出学习报告 ---------- */
+function buildReport(){
+  const t=todayStr(),hw=homework;
+  const start=hw?hw.start:addDays(t,-6), n=hw?hw.days:7;
+  const days=[];
+  for(let i=0;i<n;i++){const d=addDays(start,i);if(d>t)break;
+    const h=hist[d], lst=h&&(!hw||h.hw===hw.id)?h.list:[];
+    const accs=lst.filter(x=>x.done&&x.acc!=null).map(x=>x.acc);
+    days.push({d,done:lst.filter(x=>x.done).length,total:hw?hw.tasks.length:lst.length,ci:!!checkins[d],
+      acc:accs.length?Math.round(accs.reduce((a,b)=>a+b,0)/accs.length):null});}
+  const r={type:'report',v:1,name:kidName,
+    hw:hw?{id:hw.id,title:hw.title,start:hw.start,days:hw.days}:{id:'self',title:'自主练习（最近 7 天）',start,days:7},
+    gen:Date.now(),days,words:Object.keys(learned).length,streak:streakOf(),xp,
+    mis:mistakeKeys().slice(0,8).map(k=>[byKey[k]?byKey[k].w:k,mistakes[k]])};
+  r.sig=sign(r);return r;
+}
+function reportStats(r){
+  const full=r.days.filter(d=>d.total&&d.done>=d.total).length, ci=r.days.filter(d=>d.ci).length;
+  const accs=r.days.filter(d=>d.acc!=null).map(d=>d.acc);
+  return {full,ci,acc:accs.length?Math.round(accs.reduce((a,b)=>a+b,0)/accs.length):null};
+}
+function dotsHTML(r){
+  const map={};r.days.forEach(d=>map[d.d]=d);let h='';
+  for(let i=0;i<r.hw.days;i++){const d=addDays(r.hw.start,i),x=map[d];
+    const s=!x?'▫️':x.ci||(x.total&&x.done>=x.total)?'✅':x.done?'🟡':'⬜';
+    h+=`<span title="${fmtMD(d)}">${s}</span>`;}
+  return `<div class="dots">${h}</div>`;
+}
+function reportCard(r,del){
+  const st=reportStats(r);
+  return `<div class="rcard"><div style="display:flex;justify-content:space-between;gap:8px">
+      <div><div class="rn">🧒 ${esc(r.name)}</div><div class="rs">${esc(r.hw.title)} · ${fmtMD(r.hw.start)} 起 ${r.hw.days} 天</div></div>
+      ${del?`<button class="del" data-del="${esc(del)}" aria-label="删除">🗑️</button>`:''}</div>
+    <div class="rg"><div><b>${st.full}/${r.days.length}</b>完成天数</div><div><b>${st.ci}</b>打卡天数</div>
+      <div><b>${st.acc==null?'–':st.acc+'%'}</b>平均正确率</div><div><b>${r.words}</b>累计单词</div></div>
+    ${dotsHTML(r)}
+    <div class="rs" style="margin-top:6px">✅ 完成 🟡 做了一部分 ⬜ 没做 ▫️ 还没到</div>
+    ${r.mis.length?`<div style="font-size:14px;margin-top:6px">常错：<span class="en">${r.mis.map(([w,n])=>esc(w)+(n>1?'×'+n:'')).join('、')}</span></div>`:''}
+    <div class="rs" style="margin-top:4px">报告生成于 ${r.gen?new Date(r.gen).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'未知'} · 连续打卡 ${r.streak} 天</div>
+    ${r.tampered?'<div class="warn">⚠️ 这份报告的数据被改动过，仅供参考</div>':''}</div>`;
+}
+function exportReport(){
+  stopSpeech();clearSheets();screen='export';
+  ensureTasks();saveTasks();
+  const r=buildReport();
+  app.innerHTML=`${subHeader('📤 学习报告')}
+    <p class="hint" style="margin-top:14px">把报告发给老师，老师在「老师工具」里导入就能看到完成情况。报告里只有学习数据，没有其他个人信息。</p>
+    <div class="form"><label>孩子名字（老师看到的名字）<input class="inp" id="nm" maxlength="20" value="${esc(kidName)}" placeholder="例如 Tom 王小明"></label></div>
+    <div id="pv">${reportCard(cleanReport(r))}</div>
+    <div class="row1"><button class="big green" id="dl">📄 下载报告文件</button><button class="big blue" id="cd">💬 生成报告码（发微信）</button></div>
+    <p class="note" id="msg"></p><div id="out"></div>`;
+  document.getElementById('back').onclick=home;
+  const getR=()=>{const v=document.getElementById('nm').value.trim().slice(0,20);
+    if(!v){document.getElementById('msg').textContent='请先填写孩子名字';return null;}
+    kidName=v;store.set('name',kidName);const rr=buildReport();document.getElementById('pv').innerHTML=reportCard(cleanReport(rr));return rr;};
+  document.getElementById('dl').onclick=async()=>{const rr=getR();if(!rr)return;
+    document.getElementById('msg').textContent=await saveFile(`report-${(rr.name.replace(/[^A-Za-z0-9]/g,'')||'student')}-${todayStr()}.json`,rr);};
+  document.getElementById('cd').onclick=()=>{const rr=getR();if(!rr)return;const st=reportStats(rr);
+    const text=`【英语小探险·学习报告】${rr.name} · ${rr.hw.title}\n完成 ${st.full}/${rr.days.length} 天，打卡 ${st.ci} 天\n老师在「老师工具 → 查看报告」里粘贴这整段：\n${encodeCode('EA-RP:',rr)}`;
+    document.getElementById('msg').textContent='';document.getElementById('out').innerHTML=codeBox(text,'报告码');wireCode();};
+}
+
+/* ---------- 老师端 ---------- */
+function newDraft(){return {title:'本周英语作业',teacher:'',note:'',start:todayStr(),days:7,tasks:TEMPLATES[1].tasks.map(x=>Object.assign({},x))};}
+function catOpts(sel,noLetters){return ORDER.filter(c=>!(noLetters&&c==='letters')).map(c=>`<option value="${c}" ${c===sel?'selected':''}>${CATS[c].emoji} ${CATS[c].name}</option>`).join('');}
+function teacher(tab){
+  stopSpeech();clearSheets();screen='teacher';
+  if(!draft)draft=newDraft();
+  app.innerHTML=`${subHeader('👩‍🏫 老师工具')}
+    <div class="tabs"><button class="${tab==='make'?'on':''}" data-tab="make">📝 布置作业</button><button class="${tab==='see'?'on':''}" data-tab="see">📊 查看报告</button></div>
+    <div id="tb"></div>`;
+  document.getElementById('back').onclick=home;
+  app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>teacher(b.dataset.tab));
+  tab==='make'?makeTab():seeTab();
+}
+function makeTab(){
+  const tb=document.getElementById('tb'),d=draft;
+  tb.innerHTML=`<div class="panel form">
+      <label>作业名称<input class="inp" id="f_title" maxlength="30" value="${esc(d.title)}"></label>
+      <label>老师署名<input class="inp" id="f_teacher" maxlength="20" value="${esc(d.teacher)}" placeholder="例如 Miss Wang"></label>
+      <div class="frow"><label>开始日期<input class="inp" type="date" id="f_start" value="${esc(d.start)}"></label>
+        <label>持续<select class="inp" id="f_days">${[3,5,7,10,14,21,28].map(n=>`<option value="${n}" ${n===d.days?'selected':''}>${n} 天</option>`).join('')}</select></label></div>
+      <div class="sec2">快速套用模板</div>
+      <div class="tpls">${TEMPLATES.map((t,i)=>`<button class="spd" data-tpl="${i}">${t.name}</button>`).join('')}</div>
+      <div class="sec2">每天的任务（每天都一样，最多 6 个；“学新单词”每天会自动换下一批）</div>
+      ${d.tasks.map((x,i)=>`<div class="trow">
+        <select class="inp" data-k="${i}">${Object.entries(KINDS).map(([k,v])=>`<option value="${k}" ${k===x.kind?'selected':''}>${v}</option>`).join('')}</select>
+        ${x.kind==='new'||x.kind==='cat'?`<select class="inp" data-c="${i}">${catOpts(x.cat,x.kind==='new')}</select>`:''}
+        ${x.kind==='new'?`<select class="inp" data-n="${i}">${[2,3,4,5,6].map(n=>`<option ${n===x.n?'selected':''}>${n}</option>`).join('')}</select><span class="hint">个</span>`:''}
+        ${x.kind==='offline'?`<input class="inp grow" data-t="${i}" maxlength="40" value="${esc(x.t||'')}" placeholder="例如：读课本第 12 页">`:''}
+        <button class="del" data-rm="${i}" aria-label="删除这个任务">✕</button></div>`).join('')}
+      ${d.tasks.length<6?'<div class="prow"><button class="ghost" id="add">＋ 加一个任务</button></div>':''}
+      <label>给孩子的话（会显示在任务上方）<textarea class="inp" id="f_note" maxlength="200" placeholder="例如：这周学动物，每天都要大声跟读哦！">${esc(d.note)}</textarea></label>
+    </div>
+    <div class="row1"><button class="big green" id="f_dl">📄 下载作业文件</button><button class="big blue" id="f_code">💬 生成作业码（发微信）</button></div>
+    <p class="note" id="f_msg"></p><div id="f_out"></div>`;
+  const save=()=>store.set('draft',draft);
+  const val=id=>document.getElementById(id).value;
+  ['f_title','f_teacher','f_start','f_days','f_note'].forEach(id=>document.getElementById(id).oninput=()=>{
+    d.title=val('f_title');d.teacher=val('f_teacher');d.start=val('f_start')||todayStr();d.days=+val('f_days');d.note=val('f_note');save();});
+  tb.querySelectorAll('[data-k]').forEach(s=>s.onchange=()=>{const i=+s.dataset.k,k=s.value;
+    d.tasks[i]=k==='new'?{kind:k,cat:'animals',n:4}:k==='cat'?{kind:k,cat:'letters'}:k==='offline'?{kind:k,t:''}:{kind:k};save();makeTab();});
+  tb.querySelectorAll('[data-c]').forEach(s=>s.onchange=()=>{d.tasks[+s.dataset.c].cat=s.value;save();});
+  tb.querySelectorAll('[data-n]').forEach(s=>s.onchange=()=>{d.tasks[+s.dataset.n].n=+s.value;save();});
+  tb.querySelectorAll('[data-t]').forEach(s=>s.oninput=()=>{d.tasks[+s.dataset.t].t=s.value;save();});
+  tb.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{d.tasks.splice(+b.dataset.rm,1);save();makeTab();});
+  tb.querySelectorAll('[data-tpl]').forEach(b=>b.onclick=()=>{d.tasks=TEMPLATES[+b.dataset.tpl].tasks.map(x=>Object.assign({},x));save();makeTab();});
+  const add=document.getElementById('add');if(add)add.onclick=()=>{d.tasks.push({kind:'listen'});save();makeTab();};
+  const build=()=>{const msg=document.getElementById('f_msg');
+    try{const hw=cleanHw(Object.assign({type:'hw',id:'hw'+Date.now().toString(36)},d));
+      if(hw.tasks.length<d.tasks.length){msg.textContent='有线下任务还没写内容';return null;}
+      msg.textContent='';return hw;}
+    catch(e){msg.textContent='❌ '+e.message;return null;}};
+  document.getElementById('f_dl').onclick=async()=>{const hw=build();if(!hw)return;
+    document.getElementById('f_msg').textContent=await saveFile(`homework-${hw.start}.json`,hw);
+    document.getElementById('f_out').innerHTML=hwPreview(hw);};
+  document.getElementById('f_code').onclick=()=>{const hw=build();if(!hw)return;
+    const text=`【英语小探险·老师作业】${hw.title}\n${fmtMD(hw.start)} 起 ${hw.days} 天，每天 ${hw.tasks.length} 个任务\n打开英语小探险 →「导入老师作业」，粘贴这整段文字：\n${encodeCode('EA-HW:',hw)}`;
+    document.getElementById('f_out').innerHTML=codeBox(text,'作业码')+hwPreview(hw);wireCode();};
+}
+function seeTab(){
+  const tb=document.getElementById('tb');
+  const list=Object.entries(reports).sort((a,b)=>(b[1].hw.start+b[1].hw.title).localeCompare(a[1].hw.start+a[1].hw.title)||a[1].name.localeCompare(b[1].name));
+  tb.innerHTML=`<p class="hint" style="margin-top:10px">家长发来的报告文件或报告码（EA-RP: 开头）都可以导入，同一个孩子同一份作业会自动换成最新的。报告只存在这台设备上。</p>
+    <div class="row1"><button class="big blue" id="rf">📂 选择报告文件（可多选）</button></div>
+    <div class="sec2">或者粘贴报告码（可以一次粘贴好几段）</div>
+    <textarea class="inp" id="rp" placeholder="【英语小探险·学习报告】…&#10;EA-RP:……"></textarea>
+    <div class="row1"><button class="big green" id="rgo">导入</button></div>
+    <p class="note" id="rmsg"></p>
+    <div class="sec2">已收到 ${list.length} 份报告</div>
+    ${list.length?list.map(([k,r])=>reportCard(r,k)).join(''):'<p class="hint">还没有报告</p>'}
+    ${list.length?'<div class="row1" style="margin-top:16px"><button class="big gray" id="rclr">清空全部报告</button></div>':''}`;
+  const addTexts=texts=>{let ok=0,bad=[];
+    texts.forEach(txt=>{
+      const parts=String(txt).match(/EA-RP:\s*[A-Za-z0-9+/=]+/g)||[txt];
+      parts.forEach(p=>{try{const r=cleanReport(decodeAny(p));const k=r.name+'|'+r.hw.id;
+        if(!reports[k]||reports[k].gen<=r.gen)reports[k]=r;ok++;}catch(e){bad.push(e.message);}});});
+    store.set('reports',reports);seeTab();
+    document.getElementById('rmsg').textContent=(ok?`✅ 导入了 ${ok} 份报告`:'')+(bad.length?`　❌ ${bad.length} 份没导入：${bad[0]}`:'');};
+  document.getElementById('rf').onclick=()=>pickFile(true,addTexts);
+  document.getElementById('rgo').onclick=()=>addTexts([document.getElementById('rp').value]);
+  tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{delete reports[b.dataset.del];store.set('reports',reports);seeTab();});
+  const clr=document.getElementById('rclr');if(clr)clr.onclick=()=>{if(confirm('确定清空全部报告吗？')){reports={};store.set('reports',reports);seeTab();}};
 }
 
 document.addEventListener('keydown',e=>{
