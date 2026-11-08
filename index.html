@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>英语小探险</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
+<style>
+:root{
+  --green:#58cc02;--green-d:#46a302;--green-bg:#d7ffb8;
+  --red:#ff4b4b;--red-d:#d33131;--red-bg:#ffdfe0;
+  --blue:#1cb0f6;--blue-d:#1899d6;--blue-bg:#ddf4ff;
+  --orange:#ff9600;--orange-d:#e08400;--orange-bg:#fff1dc;
+  --purple:#a560e8;--purple-d:#8a45cc;
+  --yellow:#ffc800;--bg:#f7f7f7;--card:#fff;--line:#e5e5e5;--text:#3c3c3c;--muted:#8a8a8a;--off:#dddddd;
+  --tipbg:#fff4d6;--tipink:#7a5a00;--sheet-tip:rgba(255,255,255,.7);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --green-bg:#1f3a12;--red-bg:#3d1d1e;--blue-bg:#13324a;--orange-bg:#3a2a12;
+    --green-d:#79e02a;--red-d:#ff7a7a;--blue-d:#5cc8ff;--orange-d:#ffb14a;--purple-d:#c08cff;
+    --bg:#131f24;--card:#1c2b32;--line:#33444c;--text:#e8eef1;--muted:#94a6ae;--off:#3c4c54;
+    --tipbg:#3a3214;--tipink:#ffe08a;--sheet-tip:rgba(0,0,0,.25);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --green-bg:#1f3a12;--red-bg:#3d1d1e;--blue-bg:#13324a;--orange-bg:#3a2a12;
+  --green-d:#79e02a;--red-d:#ff7a7a;--blue-d:#5cc8ff;--orange-d:#ffb14a;--purple-d:#c08cff;
+  --bg:#131f24;--card:#1c2b32;--line:#33444c;--text:#e8eef1;--muted:#94a6ae;--off:#3c4c54;
+  --tipbg:#3a3214;--tipink:#ffe08a;--sheet-tip:rgba(0,0,0,.25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;}
+button{font-family:inherit;cursor:pointer;color:inherit}
+#app{max-width:560px;margin:0 auto;min-height:100vh;padding-block:calc(14px + env(safe-area-inset-top,0px)) 150px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column}
+.en{font-family:"Fredoka","Arial Rounded MT Bold","Avenir Next","Segoe UI",Arial,sans-serif;letter-spacing:.3px}
+
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:6px;font-weight:700;font-size:14px;flex-wrap:wrap}
+.chip{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:6px 10px;white-space:nowrap}
+.chip.fire{color:var(--orange)} .chip.xp{color:#e3a400} .chip.goal{color:var(--blue-d)}
+.title{text-align:center;font-size:34px;margin:20px 0 2px;font-weight:700}
+.sub{text-align:center;color:var(--muted);margin:0 0 16px}
+
+/* tasks */
+.panel{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:14px 14px 12px}
+.phead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.phead h2{font-size:20px;margin:0}
+.pbar{height:12px;background:var(--line);border-radius:8px;overflow:hidden;margin:6px 0 10px}
+.pbar>i{display:block;height:100%;background:var(--green);border-radius:8px;transition:width .35s}
+.task{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:2px dashed var(--line)}
+.task:first-of-type{border-top:none}
+.task .ti{font-size:30px;width:40px;text-align:center;flex:none}
+.task .tt{flex:1;min-width:0}
+.task .tt b{display:block;font-size:16px}
+.task .tt span{display:block;font-size:13px;color:var(--muted);line-height:1.4}
+.task.done .tt b{color:var(--green-d)}
+.tbtn{flex:none;border:none;border-radius:12px;padding:8px 12px;font-weight:800;font-size:14px;color:#fff;background:var(--blue);border-bottom:4px solid var(--blue-d)}
+.tbtn.off{background:var(--orange);border-bottom-color:var(--orange-d)}
+.tbtn:active{transform:translateY(2px);border-bottom-width:2px}
+.tok{flex:none;font-size:26px}
+.prow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.ghost{flex:1;border:2px solid var(--line);border-bottom-width:4px;background:var(--card);border-radius:14px;padding:8px 10px;font-weight:800;font-size:14px;color:var(--blue-d);white-space:nowrap}
+.ghost:active{transform:translateY(2px);border-bottom-width:2px}
+.checkin{margin-top:12px;width:100%}
+.note{font-size:13px;color:var(--muted);text-align:center;margin-top:8px}
+
+.sec{font-size:18px;font-weight:800;margin:22px 2px 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cat{background:var(--card);border:2px solid var(--line);border-bottom-width:5px;border-radius:18px;
+  padding:12px 8px 10px;text-align:center;transition:transform .08s}
+.cat:active{transform:translateY(3px);border-bottom-width:2px}
+.cat .emoji{font-size:32px}
+.cat .cname{font-size:17px;font-weight:800;margin-top:2px}
+.cat .cdesc{font-size:12px;color:var(--muted);margin-top:2px;min-height:16px}
+.stars{color:var(--yellow);font-size:17px;margin-top:2px;letter-spacing:2px}
+.stars .off{color:var(--off)}
+.mini{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin:6px 10px 0}
+.mini>i{display:block;height:100%;background:var(--blue)}
+
+.big{border:none;border-radius:16px;padding:14px 12px;font-size:18px;font-weight:800;color:#fff;
+  border-bottom:5px solid rgba(0,0,0,.18);transition:transform .08s}
+.big:active{transform:translateY(3px);border-bottom-width:2px}
+.big.green{background:var(--green)} .big.red{background:var(--red)} .big.blue{background:var(--blue)}
+.big.orange{background:var(--orange)} .big.purple{background:var(--purple)} .big.gray{background:#bdbdbd}
+.big[disabled]{opacity:.7;cursor:default}
+.row1{display:grid;gap:12px;margin-top:12px}
+
+details.set{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:10px 14px;margin-top:18px}
+details.set summary{font-weight:800;cursor:pointer}
+.speedrow{display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700;color:var(--muted);flex-wrap:wrap}
+.spd{border:2px solid var(--line);background:var(--card);border-radius:12px;padding:6px 12px;font-size:14px;font-weight:700}
+.spd.on{border-color:var(--blue);background:var(--blue-bg);color:var(--blue-d)}
+.mutetip{background:var(--tipbg);border:2px solid var(--yellow);border-radius:14px;padding:10px 12px;margin-top:14px;font-size:14px;line-height:1.5;color:var(--tipink)}
+.mutetip.small{font-size:13px;padding:7px 10px;margin-top:12px}
+.foot{text-align:center;color:var(--muted);font-size:13px;margin-top:18px;line-height:1.6}
+
+/* lesson */
+.lhead{display:flex;align-items:center;gap:12px}
+.xbtn{background:none;border:none;font-size:26px;color:#aaa;padding:0 4px}
+.bar{flex:1;height:16px;background:var(--line);border-radius:10px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--green);border-radius:10px;transition:width .35s;box-shadow:inset 0 -4px 0 rgba(0,0,0,.08)}
+.combo{min-width:62px;text-align:right;font-weight:800;color:var(--orange);font-size:15px}
+.qlabel{font-size:20px;font-weight:800;margin:24px 0 8px}
+.prompt{text-align:center;margin:8px 0 20px}
+.pic{font-size:96px;line-height:1.15}
+.wordbig{font-size:56px;font-weight:700;color:var(--blue-d);margin:16px 0 6px;word-break:break-word}
+.letterbig{font-size:110px;font-weight:700;color:var(--blue-d);line-height:1.1}
+.zhbig{font-size:44px;font-weight:700;margin:16px 0 6px}
+.minispk{margin-top:10px;border:2px solid var(--line);border-bottom-width:4px;background:var(--card);border-radius:14px;padding:6px 16px;font-size:16px;font-weight:700;color:var(--blue-d)}
+.speaker{width:120px;height:120px;border-radius:30px;border:none;background:var(--blue);color:#fff;font-size:56px;
+  border-bottom:6px solid var(--blue-d);margin:14px auto 8px;display:block}
+.speaker:active{transform:translateY(3px);border-bottom-width:3px}
+.hint{color:var(--muted);font-size:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opt{background:var(--card);border:2px solid var(--line);border-bottom-width:5px;border-radius:16px;
+  padding:14px 6px;font-size:26px;font-weight:700;position:relative;min-height:80px;word-break:break-word}
+.opt.zh{font-size:24px}
+.opt.lt{font-size:44px}
+.opt.long{font-size:19px}
+.opt .em{font-size:46px;line-height:1.1;display:block}
+.opt .emw{font-size:15px;font-weight:600;color:var(--muted);display:block;margin-top:2px}
+.opt .k{position:absolute;left:10px;top:8px;font-size:12px;color:#bbb;font-family:sans-serif;font-weight:700;border:2px solid var(--line);border-radius:6px;padding:0 5px}
+.opt:active{transform:translateY(3px);border-bottom-width:2px}
+.opt.ok{background:var(--green-bg);border-color:var(--green);color:var(--green-d)}
+.opt.bad{background:var(--red-bg);border-color:var(--red);color:var(--red-d);animation:shake .35s}
+.opt[disabled]{cursor:default}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.blank{display:inline-block;min-width:.8em;border-bottom:5px solid var(--orange);color:var(--orange)}
+
+/* flashcard */
+.fcard{background:var(--card);border:2px solid var(--line);border-bottom-width:6px;border-radius:24px;padding:24px 16px;text-align:center;margin-top:22px}
+.fcard .pic{font-size:110px}
+.fcard .wordbig{margin:10px 0 0}
+.fcard .zh{font-size:22px;color:var(--muted);margin-top:4px}
+.fcard .ex{font-size:17px;color:var(--muted);margin-top:14px}
+.fbtns{display:flex;gap:12px;margin-top:20px}
+.fbtns .big{flex:1}
+
+/* sheet */
+.sheet{position:fixed;left:0;right:0;bottom:0;padding-top:16px;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));z-index:5;animation:up .2s ease-out}
+.sheet.ok{background:var(--green-bg)} .sheet.bad{background:var(--red-bg)}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.sheet-in{max-width:560px;margin:0 auto}
+.fb-title{font-size:22px;font-weight:800}
+.sheet.ok .fb-title{color:var(--green-d)} .sheet.bad .fb-title{color:var(--red-d)}
+.fb-detail{font-size:20px;margin:6px 0}
+.fb-detail .en{font-size:26px;font-weight:700}
+.tip{background:var(--sheet-tip);border-radius:12px;padding:8px 12px;font-size:15px;line-height:1.55;margin:6px 0}
+.sheet-btns{display:flex;gap:10px;margin-top:10px}
+.sheet-btns .big{flex:1}
+.iconbtn{border:none;border-radius:16px;background:var(--card);font-size:24px;width:62px;border-bottom:5px solid rgba(0,0,0,.12)}
+
+/* result / checkin */
+.result{text-align:center;padding-top:26px}
+.result .emo{font-size:88px}
+.result h2{font-size:28px;margin:8px 0}
+.bigstars{font-size:50px;color:var(--yellow);letter-spacing:6px}
+.bigstars .off{color:var(--off)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
+.stat{text-align:center;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 4px}
+.stat b{display:block;font-size:24px}
+.stat span{font-size:13px;color:var(--muted)}
+.rbtns{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+.taskdone{background:var(--orange-bg);border:2px solid var(--orange);border-radius:14px;padding:10px;font-weight:800;color:var(--orange-d);margin-top:10px}
+
+.ccard{background:linear-gradient(160deg,#ffd84d,#ff9600);color:#3b2400;border-radius:26px;padding:22px 18px;text-align:center;margin-top:20px;box-shadow:0 6px 0 rgba(0,0,0,.12)}
+.ccard .d{font-weight:800;font-size:15px;opacity:.8}
+.ccard .n{font-size:60px;font-weight:700;line-height:1.1;margin-top:6px}
+.ccard .n small{font-size:22px}
+.ccard .m{font-size:17px;font-weight:700;margin-top:4px}
+.ccard .row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.ccard .row div{background:rgba(255,255,255,.45);border-radius:14px;padding:8px 2px;font-size:12px;font-weight:700}
+.ccard .row b{display:block;font-size:22px}
+.ccard .done{margin-top:12px;font-size:14px;text-align:left;background:rgba(255,255,255,.35);border-radius:14px;padding:8px 12px;line-height:1.7}
+
+/* calendar */
+.calhead{display:flex;align-items:center;justify-content:space-between;margin:18px 0 10px}
+.calhead b{font-size:20px}
+.calnav{border:2px solid var(--line);background:var(--card);border-radius:12px;width:44px;height:40px;font-size:18px;font-weight:800}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal .wd{text-align:center;font-size:12px;color:var(--muted);font-weight:700}
+.cal .day{aspect-ratio:1;border-radius:12px;background:var(--card);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;font-weight:700;position:relative}
+.cal .day.on{background:var(--green-bg);border-color:var(--green);color:var(--green-d)}
+.cal .day.on::after{content:"✓";font-size:16px;line-height:1}
+.cal .day.part{border-color:var(--orange);border-style:dashed}
+.cal .day.today{box-shadow:0 0 0 3px var(--blue)}
+.cal .day.empty{background:none;border:none}
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.badge{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:10px 4px;text-align:center;font-size:13px;font-weight:700}
+.badge .bi{font-size:34px;display:block}
+.badge.lock{opacity:.4;filter:grayscale(1)}
+.legend{display:flex;gap:14px;justify-content:center;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+
+.confetti{position:fixed;top:-40px;font-size:26px;pointer-events:none;animation:fall linear forwards;z-index:9}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ================= 词库 =================
+   每条：[英文, 中文, 图片]  —— 全部是 KET 入门 / 小学低年级的高频词 */
+const CATS = {
+  letters:{name:'字母 ABC',emoji:'🔤',desc:'Aa Bb Cc … Zz',types:['case','lcase','listenL','abc','first'],
+    tip:'b 和 d 是镜子里的双胞胎：b 肚子朝右，d 肚子朝左。p 和 q 也一样。',
+    items:[['A','apple','🍎'],['B','ball','⚽'],['C','cat','🐱'],['D','dog','🐶'],['E','egg','🥚'],['F','fish','🐟'],
+      ['G','grape','🍇'],['H','hat','🎩'],['I','ice cream','🍦'],['J','juice','🧃'],['K','kite','🪁'],['L','lion','🦁'],
+      ['M','monkey','🐵'],['N','nose','👃'],['O','orange','🍊'],['P','pig','🐷'],['Q','queen','👸'],['R','rabbit','🐰'],
+      ['S','sun','☀️'],['T','tiger','🐯'],['U','umbrella','☂️'],['V','violin','🎻'],['W','watch','⌚'],['X','box','📦'],
+      ['Y','yo-yo','🪀'],['Z','zebra','🦓']]},
+  hello:{name:'打招呼',emoji:'👋',desc:'Hello! Thank you!',types:['z2w','w2z','listenT'],
+    tip:'见面说 Hello / Hi，分开说 Goodbye / Bye。别人帮你，就说 Thank you!',
+    items:[['Hello!','你好！','🙋'],['Goodbye!','再见！','👋'],['Thank you!','谢谢你！','🙏'],['Sorry.','对不起。','😔'],
+      ['Good morning!','早上好！','🌅'],['Good night!','晚安！','🌙'],['Yes.','是的。','👍'],['No.','不是。','🙅'],
+      ['Please.','请。','🤲'],['I love you.','我爱你。','❤️'],['How are you?','你好吗？','🙂'],['I\'m fine.','我很好。','😄'],
+      ['Nice to meet you.','很高兴认识你。','🤝'],['What\'s your name?','你叫什么名字？','📛']]},
+  numbers:{name:'数字',emoji:'🔢',desc:'one two three',types:['p2w','w2p','listen','z2w','spell'],
+    tip:'one two three four five，six seven eight nine ten —— 数手指一起念！',
+    items:[['one','一','1️⃣'],['two','二','2️⃣'],['three','三','3️⃣'],['four','四','4️⃣'],['five','五','5️⃣'],
+      ['six','六','6️⃣'],['seven','七','7️⃣'],['eight','八','8️⃣'],['nine','九','9️⃣'],['ten','十','🔟']]},
+  colors:{name:'颜色',emoji:'🎨',desc:'red blue green',types:['p2w','w2p','listen','z2w','spell'],
+    tip:'问颜色：What colour is it? 回答：It\'s red.',
+    items:[['red','红色','🟥'],['blue','蓝色','🟦'],['green','绿色','🟩'],['yellow','黄色','🟨'],['orange','橙色','🟧'],
+      ['purple','紫色','🟪'],['black','黑色','⬛'],['white','白色','⬜'],['brown','棕色','🟫'],['pink','粉色','🩷']]},
+  animals:{name:'动物',emoji:'🐼',desc:'cat dog panda',types:['p2w','w2p','listen','listen','z2w','spell'],
+    tip:'说一只动物前面加 a：a cat，a dog；元音开头用 an：an elephant。',
+    items:[['cat','猫','🐱'],['dog','狗','🐶'],['bird','鸟','🐦'],['fish','鱼','🐟'],['duck','鸭子','🦆'],['pig','猪','🐷'],
+      ['cow','奶牛','🐮'],['horse','马','🐴'],['sheep','羊','🐑'],['rabbit','兔子','🐰'],['monkey','猴子','🐵'],
+      ['tiger','老虎','🐯'],['lion','狮子','🦁'],['elephant','大象','🐘'],['panda','熊猫','🐼'],['bear','熊','🐻']]},
+  food:{name:'水果食物',emoji:'🍎',desc:'apple milk cake',types:['p2w','w2p','listen','listen','z2w','spell'],
+    tip:'想要什么就说 I like …：I like apples. 想吃就说 Can I have some milk, please?',
+    items:[['apple','苹果','🍎'],['banana','香蕉','🍌'],['orange','橙子','🍊'],['grape','葡萄','🍇'],['pear','梨','🍐'],
+      ['watermelon','西瓜','🍉'],['strawberry','草莓','🍓'],['milk','牛奶','🥛'],['egg','鸡蛋','🥚'],['bread','面包','🍞'],
+      ['rice','米饭','🍚'],['cake','蛋糕','🍰'],['water','水','💧'],['juice','果汁','🧃'],['noodles','面条','🍜'],['ice cream','冰淇淋','🍦']]},
+  body:{name:'身体',emoji:'🙂',desc:'eye ear nose',types:['p2w','w2p','listen','z2w','spell'],
+    tip:'边指边说：Touch your nose! Touch your ear! 两只眼睛说 eyes，两只手说 hands。',
+    items:[['eye','眼睛','👁️'],['ear','耳朵','👂'],['nose','鼻子','👃'],['mouth','嘴巴','👄'],['hand','手','✋'],
+      ['foot','脚','🦶'],['leg','腿','🦵'],['arm','胳膊','💪'],['hair','头发','💇'],['tooth','牙齿','🦷'],['face','脸','😊']]},
+  family:{name:'家人',emoji:'👨‍👩‍👧',desc:'mum dad baby',types:['p2w','w2p','listen','z2w'],
+    tip:'介绍家人：This is my mum. This is my dad. 英国人常说 mum，美国人常说 mom。',
+    items:[['mum','妈妈','👩'],['dad','爸爸','👨'],['sister','姐妹','👧'],['brother','兄弟','👦'],['baby','宝宝','👶'],
+      ['grandma','奶奶 / 外婆','👵'],['grandpa','爷爷 / 外公','👴'],['family','家庭','👨‍👩‍👧']]},
+  school:{name:'学校',emoji:'🎒',desc:'book pen bag',types:['p2w','w2p','listen','z2w','spell'],
+    tip:'问东西是什么：What\'s this? 回答：It\'s a book.',
+    items:[['book','书','📖'],['pen','钢笔','🖊️'],['pencil','铅笔','✏️'],['bag','书包','🎒'],['ruler','尺子','📏'],
+      ['chair','椅子','🪑'],['teacher','老师','🧑‍🏫'],['school','学校','🏫'],['crayon','蜡笔','🖍️'],['scissors','剪刀','✂️'],['clock','钟','🕐']]},
+  toys:{name:'玩具交通',emoji:'🚗',desc:'car bus kite',types:['p2w','w2p','listen','z2w','spell'],
+    tip:'坐车说 by：by bus，by car，by bike。',
+    items:[['ball','球','⚽'],['kite','风筝','🪁'],['car','小汽车','🚗'],['bus','公交车','🚌'],['bike','自行车','🚲'],
+      ['boat','船','⛵'],['plane','飞机','✈️'],['train','火车','🚆'],['teddy bear','泰迪熊','🧸'],['robot','机器人','🤖'],['doll','娃娃','🪆']]},
+  nature:{name:'天气自然',emoji:'🌈',desc:'sun rain snow',types:['p2w','w2p','listen','z2w','spell'],
+    tip:'说天气：It\'s sunny. It\'s rainy. It\'s snowy.',
+    items:[['sun','太阳','☀️'],['moon','月亮','🌙'],['star','星星','⭐'],['tree','树','🌳'],['flower','花','🌸'],
+      ['rain','雨','🌧️'],['snow','雪','❄️'],['cloud','云','☁️'],['rainbow','彩虹','🌈'],['sea','大海','🌊']]},
+  actions:{name:'动作',emoji:'🏃',desc:'run jump swim',types:['p2w','w2p','listen','z2w','spell'],
+    tip:'会做什么就说 I can …：I can swim! I can run!',
+    items:[['run','跑','🏃'],['swim','游泳','🏊'],['sing','唱歌','🎤'],['dance','跳舞','💃'],['read','读书','📚'],
+      ['sleep','睡觉','😴'],['draw','画画','🎨'],['eat','吃','😋'],['cook','做饭','🍳'],['ride','骑车','🚴'],['climb','爬','🧗']]}
+};
+const ORDER=['letters','hello','numbers','colors','animals','food','body','family','school','toys','nature','actions'];
+const ITEMS={};let ALL=[];
+ORDER.forEach(id=>{ITEMS[id]=CATS[id].items.map(([w,z,e])=>({w,z,e,cat:id,key:id+'|'+w}));ALL=ALL.concat(ITEMS[id]);});
+const WORDS=ALL.filter(i=>i.cat!=='letters'&&i.cat!=='hello');
+const LESSON_LEN=8;
+/* 生成任务的强度：任务数、新词数 */
+const LEVELS=[{name:'轻松',n:3,newN:3},{name:'标准',n:4,newN:4},{name:'加油',n:5,newN:5}];
+/* 线下任务：家长确认后打勾 */
+const OFFLINE=[
+  {e:'🎵',t:'唱一遍 ABC 字母歌',s:'边唱边指字母'},
+  {e:'🏠',t:'用英语说出家里 3 样东西',s:'比如 chair、book、bag'},
+  {e:'📺',t:'看 10 分钟英文动画',s:'Peppa Pig / Bluey 都可以'},
+  {e:'🌅',t:'用英语跟家人说早安晚安',s:'Good morning! / Good night!'},
+  {e:'📚',t:'和家长一起读一本英文绘本',s:'读完说出 2 个认识的单词'},
+  {e:'✋',t:'玩一次 Touch your nose',s:'家长说身体部位，孩子去指'},
+  {e:'🎨',t:'用英语说出 5 种颜色',s:'指着身边的东西说'},
+  {e:'🔢',t:'用英语从 1 数到 10',s:'再倒着数一遍更厉害'},
+  {e:'✏️',t:'描写 5 个大小写字母',s:'Aa Bb Cc Dd Ee …'}
+];
+const CONFUSE=['bdpq','mnwu','ijl','uvwy','ceo','sz','ft','hn','gqy','kx','EF','MW','OQC','PRB','IJLT','UV','NZ'];
+
+/* ================= 小工具 ================= */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function rng(seed){let a=seed;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function seededShuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const todayStr=()=>ymd(new Date());
+const dayBefore=s=>{const [y,m,d]=s.split('-').map(Number);return ymd(new Date(y,m-1,d-1));};
+
+/* ================= 存档（只存在这台设备的浏览器里） ================= */
+const store={
+  get(k,d){try{const v=localStorage.getItem('enadv_'+k);return v?JSON.parse(v):d;}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem('enadv_'+k,JSON.stringify(v));}catch(e){}}
+};
+let prog=store.get('prog',{}), mistakes=store.get('mistakes',{}), xp=store.get('xp',0),
+    learned=store.get('learned',{}), checkins=store.get('checkins',{}),
+    today=store.get('today',{date:'',lessons:0,xp:0,newWords:0}),
+    tasks=store.get('tasks',{date:'',regen:0,list:[]}),
+    level=store.get('level',1);
+function curToday(){const t=todayStr();if(today.date!==t)today={date:t,lessons:0,xp:0,newWords:0};return today;}
+function mistakeKeys(){return Object.entries(mistakes).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]).map(([k])=>k);}
+const byKey={};ALL.forEach(i=>byKey[i.key]=i);
+function bumpMistake(it,d){const k=it.key;mistakes[k]=Math.max(0,(mistakes[k]||0)+d);if(!mistakes[k])delete mistakes[k];store.set('mistakes',mistakes);}
+function learnedIn(cat){return ITEMS[cat].filter(i=>learned[i.key]).length;}
+function markLearned(it){if(!learned[it.key]){learned[it.key]=1;store.set('learned',learned);curToday().newWords++;store.set('today',today);}}
+function streakOf(){ // 连续打卡天数：今天没打也从昨天往前算
+  let d=todayStr(); if(!checkins[d]) d=dayBefore(d);
+  let n=0; while(checkins[d]){n++;d=dayBefore(d);} return n;
+}
+function longestStreak(){
+  const ds=Object.keys(checkins).sort();let best=0,cur=0,prev='';
+  ds.forEach(d=>{cur=(prev&&dayBefore(d)===prev)?cur+1:1;best=Math.max(best,cur);prev=d;});return best;
+}
+
+/* ================= 任务生成 ================= */
+function makeTask(kind,extra={}){return Object.assign({id:kind+'-'+Math.random().toString(36).slice(2,7),kind,done:false},extra);}
+function generateTasks(keepDone){
+  const t=todayStr();
+  if(tasks.date!==t){tasks={date:t,regen:0,list:[]};keepDone=false;}
+  else if(keepDone) tasks.regen++;
+  const r=rng(hash(t+'#'+tasks.regen));
+  const L=LEVELS[level];
+  const list=keepDone?tasks.list.filter(x=>x.done):[];
+  const has=(k,c)=>list.some(x=>x.kind===k&&(c===undefined||x.cat===c));
+  const cand=[];
+  // 1. 学新词：按顺序找还没学完的类别，前两个里随机挑
+  const open=ORDER.filter(c=>c!=='letters'&&learnedIn(c)<ITEMS[c].length);
+  const newCat=open.length?open[Math.floor(r()*Math.min(2,open.length))]:null;
+  if(newCat&&!has('new')) cand.push({p:100,t:makeTask('new',{cat:newCat,n:Math.min(L.newN,ITEMS[newCat].length-learnedIn(newCat))})});
+  // 2. 字母：还没拿满 3 星就每天练
+  if(((prog.letters||{}).stars||0)<3&&!has('cat','letters')) cand.push({p:90,t:makeTask('cat',{cat:'letters'})});
+  // 3. 错题
+  if(mistakeKeys().length&&!has('review')) cand.push({p:80,t:makeTask('review')});
+  // 4. 复习一个已经学过的类别
+  const learnedCats=ORDER.filter(c=>c!=='letters'&&c!==newCat&&learnedIn(c)>=3);
+  if(learnedCats.length&&!has('cat')){const c=learnedCats[Math.floor(r()*learnedCats.length)];cand.push({p:60+r()*20,t:makeTask('cat',{cat:c})});}
+  // 5. 听力
+  if(!has('listen')) cand.push({p:50+r()*20,t:makeTask('listen')});
+  // 6. 线下小任务
+  if(!has('offline')){const o=OFFLINE[Math.floor(r()*OFFLINE.length)];cand.push({p:L.n>=4?75:40,t:makeTask('offline',{e:o.e,t:o.t,s:o.s})});}
+  // 7. 混合挑战（兜底）
+  if(!has('mix')) cand.push({p:30,t:makeTask('mix')});
+  if(((prog.letters||{}).stars||0)>=3&&!has('cat','letters')) cand.push({p:20,t:makeTask('cat',{cat:'letters'})});
+  cand.sort((a,b)=>b.p-a.p);
+  for(const c of cand){if(list.length>=L.n)break;list.push(c.t);}
+  tasks.list=list; store.set('tasks',tasks);
+}
+function ensureTasks(){if(tasks.date!==todayStr()||!tasks.list.length)generateTasks(false);}
+function taskInfo(x){
+  switch(x.kind){
+    case 'new': return {e:CATS[x.cat].emoji,t:`认识 ${x.n} 个新单词`,s:`${CATS[x.cat].name} · 先看卡片，再做小测`};
+    case 'cat': return {e:CATS[x.cat].emoji,t:`闯一关：${CATS[x.cat].name}`,s:`${LESSON_LEN} 道题，争取 3 颗星`};
+    case 'review': return {e:'📒',t:'错题本复习',s:`${mistakeKeys().length} 个错题，答对就移出`};
+    case 'listen': return {e:'🎧',t:'听力挑战',s:'听单词，选出对的图'};
+    case 'mix': return {e:'🎲',t:'混合挑战',s:'所有学过的内容随机出题'};
+    case 'offline': return {e:x.e,t:x.t,s:x.s+' · 做完请家长打勾'};
+  }
+}
+function finishTask(id){const x=tasks.list.find(t=>t.id===id);if(x&&!x.done){x.done=true;store.set('tasks',tasks);return x;}return null;}
+const allDone=()=>tasks.list.length&&tasks.list.every(t=>t.done);
+
+/* ================= 声音 ================= */
+let enVoice=null, voiceOK=false, screen='home';
+let accent=store.get('accent','GB'); // KET 是剑桥考试，默认英音
+function loadVoices(){
+  if(!('speechSynthesis' in window)) return;
+  let vs=[];try{vs=speechSynthesis.getVoices()||[];}catch(e){}
+  const want=new RegExp('en[-_]'+accent,'i');
+  enVoice=vs.find(v=>want.test(v.lang)&&/Google|Samantha|Daniel|Serena|Kate|Karen|Natural/i.test(v.name))
+        ||vs.find(v=>want.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null;
+  const was=voiceOK; voiceOK=!!enVoice||vs.length===0; // iPhone 一开始列表可能是空的
+  if(was!==voiceOK&&screen==='home') home();
+}
+const SPEEDS=[{name:'很慢',rate:.5},{name:'慢',rate:.7},{name:'正常',rate:.9}];
+let speedIdx=store.get('speed',1);
+let hintMode=store.get('hint',true);
+/* 朗读必须在点按那一刻直接开始（iPhone 要求），不用延时 */
+function speak(text){
+  if(!voiceOK||!('speechSynthesis' in window)) return;
+  stopSpeech();
+  const parts=Array.isArray(text)?text:[text];
+  try{
+    parts.forEach(t=>{const u=new SpeechSynthesisUtterance(t);u.lang=enVoice?enVoice.lang:('en-'+accent);
+      u.rate=SPEEDS[speedIdx].rate;if(enVoice)u.voice=enVoice;speechSynthesis.speak(u);});
+    if(speechSynthesis.paused) speechSynthesis.resume();
+  }catch(e){}
+}
+function stopSpeech(){try{const ss=window.speechSynthesis;if(ss&&(ss.speaking||ss.pending))ss.cancel();}catch(e){}}
+const sayLetter=l=>l+'.';
+function sayItem(it){
+  if(it.cat==='letters') return [sayLetter(it.w),`${it.w} is for ${it.z}.`];
+  return [it.w,it.w];
+}
+let actx,silentEl=null;
+function keepPlaybackSession(){
+  try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}
+  if(silentEl){if(silentEl.paused)silentEl.play().catch(()=>{});return;}
+  try{
+    const sr=8000,n=sr/2,buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+    const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+    w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);
+    v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);
+    v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+    silentEl=new Audio(URL.createObjectURL(new Blob([buf],{type:'audio/wav'})));
+    silentEl.loop=true;silentEl.setAttribute('playsinline','');silentEl.play().catch(()=>{});
+  }catch(e){}
+}
+function unlockAudio(){keepPlaybackSession();try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();}catch(e){}}
+function beep(f,t0,d,type='sine',vol=.15){const o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.value=f;
+  g.gain.setValueAtTime(vol,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g).connect(actx.destination);o.start(t0);o.stop(t0+d);}
+function sfx(k){if(!actx)return;const n=actx.currentTime;
+  if(k==='ok'){beep(660,n,.12);beep(990,n+.1,.2);}else if(k==='bad'){beep(200,n,.28,'square',.06);}
+  else if(k==='win'){[523,659,784,1047].forEach((f,i)=>beep(f,n+i*.12,.25));}
+  else if(k==='flip'){beep(880,n,.08,'triangle',.08);}}
+const IS_IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const MUTE_TIP='🔕 听不到声音？把手机左侧的<b>静音拨片</b>拨回来（不显示橙色），再把音量调大';
+
+/* ================= 首页 ================= */
+const app=document.getElementById('app');
+function starsHTML(s,cls='stars'){return `<div class="${cls}">${'★'.repeat(s)}<span class="off">${'★'.repeat(3-s)}</span></div>`;}
+function topbar(){
+  const done=tasks.list.filter(t=>t.done).length;
+  return `<div class="topbar"><span class="chip fire">🔥 连续打卡 ${streakOf()} 天</span>
+    <span class="chip goal">📋 ${done}/${tasks.list.length}</span><span class="chip xp">⭐ ${xp}</span></div>`;
+}
+function clearSheets(){document.querySelectorAll('.sheet').forEach(s=>s.remove());}
+function home(){
+  stopSpeech();clearSheets();screen='home';ensureTasks();
+  const done=tasks.list.filter(t=>t.done).length, n=tasks.list.length, checked=!!checkins[todayStr()];
+  const m=mistakeKeys().length;
+  app.innerHTML=`${topbar()}
+    <h1 class="title en">English Adventure</h1>
+    <p class="sub">英语小探险 · 每天完成任务就能打卡</p>
+    <section class="panel" aria-label="今日任务">
+      <div class="phead"><h2>📋 今日任务</h2><span class="hint">${done}/${n} 完成</span></div>
+      <div class="pbar"><i style="width:${n?done/n*100:0}%"></i></div>
+      ${tasks.list.map(x=>{const f=taskInfo(x);return `<div class="task ${x.done?'done':''}">
+        <div class="ti">${f.e}</div><div class="tt"><b>${esc(f.t)}</b><span>${esc(f.s)}</span></div>
+        ${x.done?'<span class="tok">✅</span>':x.kind==='offline'?`<button class="tbtn off" data-off="${x.id}">完成了</button>`:`<button class="tbtn" data-task="${x.id}">去完成</button>`}
+      </div>`;}).join('')}
+      ${checked?`<button class="big green checkin" id="showcard">🏅 今天已打卡 · 查看打卡卡片</button>`
+        :allDone()?`<button class="big orange checkin" id="checkin">✅ 任务全部完成，点我打卡！</button>`
+        :`<p class="note">还差 ${n-done} 个任务就能打卡啦</p>`}
+      <div class="prow">${allDone()?'':'<button class="ghost" id="regen">🎲 换一批任务</button>'}<button class="ghost" id="cal">📅 打卡日历</button></div>
+    </section>
+
+    <div class="sec">🗺️ 自由练习</div>
+    <div class="grid">${ORDER.map(id=>{const c=CATS[id],l=learnedIn(id),t=ITEMS[id].length;return `
+      <button class="cat" data-mode="${id}"><div class="emoji">${c.emoji}</div>
+      <div class="cname">${c.name}</div><div class="cdesc en">${esc(c.desc)}</div>
+      ${starsHTML((prog[id]||{}).stars||0)}
+      ${id==='letters'?'':`<div class="mini" title="已学 ${l}/${t}"><i style="width:${l/t*100}%"></i></div>`}</button>`;}).join('')}
+    </div>
+    <div class="row1">
+      <button class="big purple" data-mode="mix">🎲 混合挑战</button>
+      <button class="big ${m?'orange':'gray'}" data-mode="review" ${m?'':'disabled'}>📒 错题本 ${m?`（${m} 个）`:'（还没有错题）'}</button>
+    </div>
+
+    <details class="set"><summary>⚙️ 家长设置</summary>
+      <div class="speedrow">📋 每天任务量：${LEVELS.map((l,i)=>`<button class="spd ${i===level?'on':''}" data-lv="${i}">${l.name}（${l.n} 个）</button>`).join('')}</div>
+      <div class="speedrow">🖼️ 模式：<button class="spd ${hintMode?'on':''}" data-hint="1">提示（自动朗读）</button><button class="spd ${hintMode?'':'on'}" data-hint="0">挑战</button></div>
+      ${voiceOK?`<div class="speedrow">🗣️ 口音：<button class="spd ${accent==='GB'?'on':''}" data-acc="GB">英音</button><button class="spd ${accent==='US'?'on':''}" data-acc="US">美音</button></div>
+      <div class="speedrow">🔊 语速：${SPEEDS.map((s,i)=>`<button class="spd ${i===speedIdx?'on':''}" data-spd="${i}">${s.name}</button>`).join('')}<button class="spd" id="tst">试听</button></div>`:''}
+      <p class="foot" style="text-align:left">学习记录只保存在这台设备的浏览器里。换手机或清除浏览器数据后会从头开始。<br>改了任务量，点“换一批任务”就会按新的数量生成（已完成的会保留）。</p>
+    </details>
+    ${IS_IOS&&voiceOK?`<div class="mutetip">${MUTE_TIP}</div>`:''}
+    <p class="foot">${voiceOK?'':'🔇 没找到英文语音，听力题已自动关闭<br>'}答错的题会自动收进错题本，复习答对就会移出</p>`;
+  app.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>startLesson(b.dataset.mode));
+  app.querySelectorAll('[data-task]').forEach(b=>b.onclick=()=>startTask(b.dataset.task));
+  app.querySelectorAll('[data-off]').forEach(b=>b.onclick=()=>{unlockAudio();finishTask(b.dataset.off);sfx('ok');home();});
+  app.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{level=+b.dataset.lv;store.set('level',level);home();});
+  app.querySelectorAll('[data-hint]').forEach(b=>b.onclick=()=>{hintMode=b.dataset.hint==='1';store.set('hint',hintMode);home();});
+  app.querySelectorAll('[data-acc]').forEach(b=>b.onclick=()=>{accent=b.dataset.acc;store.set('accent',accent);loadVoices();home();speak('Hello! Nice to meet you.');});
+  app.querySelectorAll('[data-spd]').forEach(b=>b.onclick=()=>{speedIdx=+b.dataset.spd;store.set('speed',speedIdx);home();speak('apple, banana, orange');});
+  const tst=document.getElementById('tst');if(tst)tst.onclick=()=>speak('Hello! Nice to meet you.');
+  const rg=document.getElementById('regen');if(rg)rg.onclick=()=>{generateTasks(true);home();};
+  document.getElementById('cal').onclick=()=>calendar();
+  const ci=document.getElementById('checkin');if(ci)ci.onclick=doCheckin;
+  const sc=document.getElementById('showcard');if(sc)sc.onclick=()=>checkinCard(false);
+  if(details_open) app.querySelector('details.set').open=true;
+  app.querySelector('details.set').ontoggle=e=>{details_open=e.target.open;};
+}
+let details_open=false;
+
+/* ================= 打卡 ================= */
+function doCheckin(){
+  unlockAudio();
+  const t=todayStr(),td=curToday();
+  checkins[t]={tasks:tasks.list.length,xp:td.xp,words:td.newWords,list:tasks.list.map(x=>taskInfo(x).t)};
+  store.set('checkins',checkins);
+  checkinCard(true);
+}
+const BADGES=[[1,'🌱','第一次打卡'],[3,'🔥','连续 3 天'],[7,'🏅','连续 7 天'],[14,'🚀','连续 14 天'],[30,'👑','连续 30 天'],[100,'💎','连续 100 天']];
+function checkinCard(fresh){
+  stopSpeech();clearSheets();screen='card';
+  const t=todayStr(),c=checkins[t],s=streakOf(),total=Object.keys(checkins).length;
+  const [y,mo,d]=t.split('-');const wk='日一二三四五六'[new Date().getDay()];
+  const newBadge=fresh?BADGES.find(b=>b[0]===s):null;
+  const totalLearned=Object.keys(learned).length;
+  app.innerHTML=`<div class="lhead"><button class="xbtn" id="back" aria-label="返回">✕</button><div style="flex:1;font-weight:800">${fresh?'打卡成功！':'今日打卡'}</div></div>
+    <div class="ccard">
+      <div class="d">${y} 年 ${+mo} 月 ${+d} 日 · 星期${wk}</div>
+      <div class="n">第 ${total} <small>天</small></div>
+      <div class="m">🔥 已经连续打卡 ${s} 天</div>
+      <div class="row"><div><b>${c.tasks}</b>完成任务</div><div><b>${c.words}</b>今天新词</div><div><b>${totalLearned}</b>累计单词</div></div>
+      <div class="done">${c.list.map(x=>'✅ '+esc(x)).join('<br>')}</div>
+    </div>
+    ${newBadge?`<p class="taskdone" style="text-align:center">${newBadge[1]} 获得新徽章：${newBadge[2]}！</p>`:''}
+    <p class="note">可以截图发给老师或家人 📸</p>
+    <div class="rbtns" style="margin-top:14px"><button class="big blue" id="cal">📅 查看打卡日历</button><button class="big green" id="home">返回首页</button></div>`;
+  document.getElementById('back').onclick=home;document.getElementById('home').onclick=home;
+  document.getElementById('cal').onclick=()=>calendar();
+  if(fresh){sfx('win');confetti();speak(s>1?`Well done! ${s} days in a row!`:'Well done!');}
+}
+let calMonth=null;
+function calendar(){
+  stopSpeech();clearSheets();screen='cal';
+  const now=new Date();if(!calMonth)calMonth={y:now.getFullYear(),m:now.getMonth()};
+  const {y,m}=calMonth, first=new Date(y,m,1), days=new Date(y,m+1,0).getDate();
+  const lead=(first.getDay()+6)%7, t=todayStr();
+  let cells='';for(let i=0;i<lead;i++)cells+='<div class="day empty"></div>';
+  let monthCount=0;
+  for(let d=1;d<=days;d++){const k=ymd(new Date(y,m,d)),on=!!checkins[k];if(on)monthCount++;
+    const part=!on&&k===t&&tasks.list.some(x=>x.done);
+    cells+=`<div class="day ${on?'on':''} ${part?'part':''} ${k===t?'today':''}">${d}</div>`;}
+  const s=streakOf(),best=longestStreak(),total=Object.keys(checkins).length;
+  app.innerHTML=`<div class="lhead"><button class="xbtn" id="back" aria-label="返回">✕</button><div style="flex:1;font-weight:800">📅 打卡日历</div></div>
+    <div class="stats" style="margin-top:16px"><div class="stat"><b style="color:var(--orange)">${s}</b><span>连续天数</span></div>
+      <div class="stat"><b style="color:var(--green-d)">${total}</b><span>累计打卡</span></div>
+      <div class="stat"><b style="color:var(--blue-d)">${best}</b><span>最长连续</span></div></div>
+    <div class="calhead"><button class="calnav" id="pm" aria-label="上个月">‹</button><b>${y} 年 ${m+1} 月 · 打卡 ${monthCount} 天</b><button class="calnav" id="nm" aria-label="下个月">›</button></div>
+    <div class="cal">${'一二三四五六日'.split('').map(w=>`<div class="wd">${w}</div>`).join('')}${cells}</div>
+    <div class="legend"><span>🟩 已打卡</span><span>🟦 今天</span><span>虚线：今天做了一部分</span></div>
+    <div class="sec">🏆 连续打卡徽章</div>
+    <div class="badges">${BADGES.map(([n,e,txt])=>`<div class="badge ${best>=n?'':'lock'}"><span class="bi">${e}</span>${txt}</div>`).join('')}</div>
+    <div class="rbtns" style="margin-top:20px"><button class="big green" id="home">返回首页</button></div>`;
+  document.getElementById('back').onclick=home;document.getElementById('home').onclick=home;
+  document.getElementById('pm').onclick=()=>{calMonth.m--;if(calMonth.m<0){calMonth.m=11;calMonth.y--;}calendar();};
+  document.getElementById('nm').onclick=()=>{calMonth.m++;if(calMonth.m>11){calMonth.m=0;calMonth.y++;}calendar();};
+}
+
+/* ================= 出题 ================= */
+function pickDistract(it,n,pool,ok){
+  const res=[];const src=shuffle(pool.filter(o=>o.key!==it.key&&ok(o)));
+  for(const o of src){if(res.length>=n)break;res.push(o);}return res;
+}
+function wordOK(it,o){return o.w.toLowerCase()!==it.w.toLowerCase()&&o.e!==it.e&&o.z!==it.z;}
+function letterChoices(L,n,upper){
+  const set=[L];const g=CONFUSE.find(s=>s.includes(L));
+  if(g) shuffle(g.split('')).forEach(c=>{if(set.length<n&&!set.includes(c))set.push(c);});
+  const abc=upper?'ABCDEFGHIJKLMNOPQRSTUVWXYZ':'abcdefghijklmnopqrstuvwxyz';
+  shuffle(abc.split('')).forEach(c=>{if(set.length<n&&!set.includes(c))set.push(c);});
+  return shuffle(set);
+}
+function makeQ(it,retry=false,forceType){
+  let types=CATS[it.cat].types.filter(t=>voiceOK||!t.startsWith('listen'));
+  if(forceType&&(voiceOK||!forceType.startsWith('listen'))) types=[forceType];
+  let type=types[Math.floor(Math.random()*types.length)];
+  if(type==='spell'&&(!/^[a-z]{3,8}$/.test(it.w))) type='p2w';
+  if(type==='first'&&it.w==='X') type='case';
+  if(type==='abc'&&it.w==='A') type='lcase';
+  const pool=ITEMS[it.cat];
+  const q={it,type,retry};
+  if(it.cat==='letters'){
+    const U=it.w,l=U.toLowerCase();
+    if(type==='case'){q.opts=letterChoices(l,4,false).map(v=>({v,h:v}));q.ans=l;q.cls='lt en';}
+    else if(type==='lcase'){q.opts=letterChoices(U,4,true).map(v=>({v,h:v}));q.ans=U;q.cls='lt en';}
+    else if(type==='listenL'){q.opts=letterChoices(U,4,true).map(v=>({v,h:v+v.toLowerCase()}));q.ans=U;q.cls='lt en';}
+    else if(type==='abc'){const prev=String.fromCharCode(U.charCodeAt(0)-1);q.prev=prev;q.opts=letterChoices(U,5,true).filter(v=>v!==prev);
+      q.opts=[U,...q.opts.filter(v=>v!==U)].slice(0,4);q.opts=shuffle(q.opts).map(v=>({v,h:v}));q.ans=U;q.cls='lt en';}
+    else if(type==='first'){q.opts=letterChoices(U,4,true).map(v=>({v,h:v+v.toLowerCase()}));q.ans=U;q.cls='lt en';}
+    return q;
+  }
+  if(type==='spell'){
+    const w=it.w,idx=Math.floor(Math.random()*w.length);q.idx=idx;q.ans=w[idx];
+    q.opts=letterChoices(w[idx],4,false).map(v=>({v,h:v}));q.cls='lt en';return q;
+  }
+  const others=pickDistract(it,3,pool,o=>wordOK(it,o));
+  const four=shuffle([it,...others]);
+  q.ans=it.key;
+  if(type==='p2w'||type==='z2w'||type==='listenT'){q.opts=four.map(o=>({v:o.key,h:esc(o.w)}));q.cls='en'+(four.some(o=>o.w.length>9)?' long':'');}
+  else if(type==='w2z'){q.opts=four.map(o=>({v:o.key,h:esc(o.z)}));q.cls='zh';}
+  else {q.opts=four.map(o=>({v:o.key,h:`<span class="em">${o.e}</span>${hintMode&&type==='w2p'?`<span class="emw">${esc(o.z)}</span>`:''}`}));q.cls='';}
+  return q;
+}
+function promptHTML(q){
+  const it=q.it, spk=voiceOK?'<button class="minispk" id="spk">🔊 听一听</button>':'';
+  const mute=IS_IOS?`<div class="mutetip small">${MUTE_TIP}</div>`:'';
+  switch(q.type){
+    case 'p2w': return `<div class="qlabel">这是什么？选出英文单词</div><div class="prompt"><div class="pic">${it.e}</div>${hintMode?`<div class="hint">${esc(it.z)}</div>`:''}</div>`;
+    case 'w2p': return `<div class="qlabel">读一读，选出对的图</div><div class="prompt"><div class="wordbig en">${esc(it.w)}</div>${spk}</div>`;
+    case 'listen': return `<div class="qlabel">听一听，选出你听到的</div><div class="prompt"><button class="speaker" id="spk" aria-label="再听一遍">🔊</button><div class="hint">点喇叭可以再听一遍</div>${mute}</div>`;
+    case 'listenT': return `<div class="qlabel">听一听，选出你听到的句子</div><div class="prompt"><button class="speaker" id="spk" aria-label="再听一遍">🔊</button><div class="hint">点喇叭可以再听一遍</div>${mute}</div>`;
+    case 'z2w': return `<div class="qlabel">用英语怎么说？</div><div class="prompt">${it.e?`<div class="pic" style="font-size:64px">${it.e}</div>`:''}<div class="zhbig">${esc(it.z)}</div></div>`;
+    case 'w2z': return `<div class="qlabel">这句英语是什么意思？</div><div class="prompt"><div class="wordbig en" style="font-size:42px">${esc(it.w)}</div>${spk}</div>`;
+    case 'spell': {const w=it.w;return `<div class="qlabel">缺了哪个字母？</div><div class="prompt"><div class="pic" style="font-size:72px">${it.e}</div>
+      <div class="wordbig en" style="letter-spacing:6px">${esc(w.slice(0,q.idx))}<span class="blank">_</span>${esc(w.slice(q.idx+1))}</div>${hintMode?`<div class="hint">${esc(it.z)}</div>`:''}${spk}</div>`;}
+    case 'case': return `<div class="qlabel">大写 ${it.w} 的小写是？</div><div class="prompt"><div class="letterbig en">${it.w}</div>${spk}</div>`;
+    case 'lcase': return `<div class="qlabel">小写 ${it.w.toLowerCase()} 的大写是？</div><div class="prompt"><div class="letterbig en">${it.w.toLowerCase()}</div>${spk}</div>`;
+    case 'listenL': return `<div class="qlabel">听一听，是哪个字母？</div><div class="prompt"><button class="speaker" id="spk" aria-label="再听一遍">🔊</button><div class="hint">点喇叭可以再听一遍</div>${mute}</div>`;
+    case 'abc': return `<div class="qlabel">${q.prev} 后面是哪个字母？</div><div class="prompt"><div class="letterbig en" style="font-size:80px">${q.prev} <span class="blank">?</span></div></div>`;
+    case 'first': return `<div class="qlabel">这个单词是哪个字母开头的？</div><div class="prompt"><div class="pic">${it.e}</div><div class="wordbig en" style="font-size:40px"><span class="blank">_</span>${esc(it.z.slice(1))}</div>${spk}</div>`;
+  }
+}
+/* 每种题出题时读什么（提示模式才自动读；听力题总是读） */
+function promptSpeech(q){
+  const it=q.it;
+  if(q.type==='listenL') return sayLetter(it.w);
+  if(q.type==='listen'||q.type==='listenT') return [it.w,it.w];
+  if(q.type==='first') return it.z;
+  if(q.type==='case'||q.type==='lcase') return sayLetter(it.w);
+  if(q.type==='p2w'||q.type==='z2w'||q.type==='abc'||q.type==='spell') return null; // 读出来就等于告诉答案
+  return it.w;
+}
+
+/* ================= 课程 ================= */
+let L=null;
+function startTask(id){
+  const x=tasks.list.find(t=>t.id===id);if(!x)return;
+  if(x.kind==='new') return startLearn(x.cat,x.n,id);
+  if(x.kind==='cat') return startLesson(x.cat,id);
+  return startLesson(x.kind,id);
+}
+function learnedPool(){const p=WORDS.filter(i=>learned[i.key]);return p.length>=4?p:WORDS;}
+function startLesson(mode,taskId){
+  unlockAudio();loadVoices();
+  let pool,force;
+  if(mode==='review') pool=mistakeKeys().map(k=>byKey[k]).filter(Boolean).slice(0,LESSON_LEN);
+  else if(mode==='mix') pool=shuffle(learnedPool().slice()).slice(0,LESSON_LEN);
+  else if(mode==='listen'){pool=shuffle(learnedPool().slice()).slice(0,LESSON_LEN);force='listen';}
+  else {
+    // 类别闯关：先练学过的，不够再补没学过的（看图题就能边做边学）
+    const items=ITEMS[mode];const a=shuffle(items.filter(i=>learned[i.key])),b=shuffle(items.filter(i=>!learned[i.key]));
+    pool=a.concat(b).slice(0,LESSON_LEN);
+  }
+  if(!pool.length) return home();
+  L={mode,taskId,force,queue:pool.map(it=>makeQ(it,false,force)),done:0,firstTotal:pool.length,firstCorrect:0,combo:0,maxCombo:0,gained:0};
+  next();
+}
+/* 学新词：先翻卡片，再小测 */
+function startLearn(cat,n,taskId){
+  unlockAudio();loadVoices();
+  const fresh=ITEMS[cat].filter(i=>!learned[i.key]).slice(0,n);
+  const words=fresh.length?fresh:shuffle(ITEMS[cat].slice()).slice(0,n);
+  L={mode:cat,taskId,learn:words,li:0,queue:[],done:0,firstTotal:0,firstCorrect:0,combo:0,maxCombo:0,gained:0};
+  flash();
+}
+function flash(){
+  stopSpeech();clearSheets();screen='flash';
+  const it=L.learn[L.li],n=L.learn.length;
+  app.innerHTML=`<div class="lhead"><button class="xbtn" id="quit" aria-label="退出">✕</button>
+      <div class="bar"><i style="width:${L.li/n*50}%"></i></div><div class="combo" style="color:var(--blue-d)">${L.li+1}/${n}</div></div>
+    <div class="qlabel">📇 新单词卡片</div>
+    <div class="fcard"><div class="pic">${it.e}</div><div class="wordbig en">${esc(it.w)}</div><div class="zh">${esc(it.z)}</div>
+      ${voiceOK?'<button class="minispk" id="spk">🔊 再听一遍</button>':''}
+      <div class="ex">跟着读 3 遍：<span class="en">${esc(it.w)}, ${esc(it.w)}, ${esc(it.w)}!</span></div></div>
+    <div class="fbtns">${L.li>0?'<button class="big gray" id="prev">上一个</button>':''}
+      <button class="big blue" id="nextc">${L.li<n-1?'下一个':'开始小测 →'}</button></div>`;
+  document.getElementById('quit').onclick=askQuit;
+  const spk=document.getElementById('spk');if(spk){spk.onclick=()=>speak([it.w,it.w]);}
+  speak([it.w,it.w]);
+  const p=document.getElementById('prev');if(p)p.onclick=()=>{L.li--;flash();};
+  document.getElementById('nextc').onclick=()=>{unlockAudio();sfx('flip');markLearned(it);
+    if(L.li<n-1){L.li++;flash();}
+    else{ // 每个新词出两道不同题
+      const tps=CATS[L.mode].types;
+      const qs=[];L.learn.forEach(w=>{qs.push(makeQ(w,false,'w2p'));qs.push(makeQ(w,false,tps.includes('listen')?'listen':'z2w'));});
+      L.queue=shuffle(qs);L.firstTotal=qs.length;L.qStart=true;next();}
+  };
+}
+function next(){
+  if(!L.queue.length) return finish();
+  stopSpeech();clearSheets();
+  L.q=L.queue.shift();L.answered=false;screen='lesson';
+  const q=L.q,it=q.it,total=L.done+L.queue.length+1;
+  const off=L.learn?50:0,span=L.learn?50:100;
+  app.innerHTML=`<div class="lhead"><button class="xbtn" id="quit" aria-label="退出">✕</button>
+      <div class="bar"><i style="width:${off+L.done/total*span}%"></i></div>
+      <div class="combo">${L.combo>=2?`🔥×${L.combo}`:''}</div></div>
+    ${q.retry?'<div class="hint" style="margin-top:14px">🔁 再试一次刚才错的题</div>':''}
+    ${promptHTML(q)}
+    <div class="opts">${q.opts.map((o,i)=>`<button class="opt ${q.cls}" data-v="${esc(o.v)}"><span class="k">${i+1}</span>${o.h}</button>`).join('')}</div>`;
+  document.getElementById('quit').onclick=askQuit;
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(b));
+  const sp=promptSpeech(q), spk=document.getElementById('spk');
+  if(spk) spk.onclick=()=>speak(sp||it.w);
+  if(sp&&(hintMode||q.type.startsWith('listen'))) speak(sp);
+}
+function askQuit(){
+  clearSheets();
+  const sh=document.createElement('div');sh.className='sheet bad';
+  sh.innerHTML=`<div class="sheet-in"><div class="fb-title">要退出吗？</div>
+    <div class="fb-detail" style="font-size:16px">这一关的进度不会保存${L&&L.taskId?'，任务也不会完成':''}。</div>
+    <div class="sheet-btns"><button class="big green" id="stay">继续</button><button class="big red" id="leave">退出</button></div></div>`;
+  document.body.appendChild(sh);
+  document.getElementById('stay').onclick=()=>{sh.remove();if(screen==='lesson'&&L&&L.answered)next();};
+  document.getElementById('leave').onclick=()=>{sh.remove();home();};
+}
+const PRAISE=['Great!','Well done!','Super!','Excellent!','Good job!','Perfect!'];
+function answer(btn){
+  unlockAudio();
+  if(L.answered)return;L.answered=true;
+  const q=L.q,it=q.it,ok=btn.dataset.v===q.ans;
+  app.querySelectorAll('.opt').forEach(b=>{b.disabled=true;if(b.dataset.v===q.ans)b.classList.add('ok');});
+  if(!ok)btn.classList.add('bad');
+  if(ok){L.combo++;L.maxCombo=Math.max(L.maxCombo,L.combo);L.done++;L.gained+=10;if(!q.retry)L.firstCorrect++;
+    if(L.mode==='review')bumpMistake(it,-1);
+    if(it.cat!=='letters')markLearned(it);
+    sfx('ok');}
+  else{L.combo=0;bumpMistake(it,+1);L.queue.push(makeQ(it,true,L.force));sfx('bad');}
+  const praise=PRAISE[Math.floor(Math.random()*PRAISE.length)];
+  speak(ok?[...[].concat(sayItem(it)).slice(0,1),praise]:sayItem(it));
+  const detail=it.cat==='letters'
+    ?`${it.e} <span class="en">${it.w}${it.w.toLowerCase()}</span>　<span class="en" style="font-size:20px">${it.w} is for ${esc(it.z)}</span>`
+    :`${it.e} <span class="en">${esc(it.w)}</span>　${esc(it.z)}`;
+  const sheet=document.createElement('div');sheet.className='sheet '+(ok?'ok':'bad');
+  sheet.innerHTML=`<div class="sheet-in">
+    <div class="fb-title">${ok?'✅ <span class="en">'+praise+'</span>'+(L.combo>=3?` 连对 ${L.combo} 题！`:''):'❌ 正确答案是：'}</div>
+    <div class="fb-detail">${detail}</div>
+    ${ok?'':`<div class="tip">💡 ${esc(CATS[it.cat].tip)}</div>`}
+    <div class="sheet-btns">${voiceOK?'<button class="iconbtn" id="again" aria-label="再听一遍">🔊</button>':''}
+    <button class="big ${ok?'green':'red'}" id="cont">继续</button></div></div>`;
+  document.body.appendChild(sheet);
+  const ag=document.getElementById('again');if(ag)ag.onclick=()=>speak(sayItem(it));
+  document.getElementById('cont').onclick=()=>{sheet.remove();next();};
+}
+function finish(){
+  stopSpeech();clearSheets();screen='result';
+  const acc=L.firstTotal?L.firstCorrect/L.firstTotal:1, stars=acc>=.9?3:acc>=.7?2:1;
+  const bonus=acc===1?20:5;L.gained+=bonus;xp+=L.gained;store.set('xp',xp);
+  if(CATS[L.mode]&&!L.learn){const p=prog[L.mode]||{stars:0,plays:0};p.stars=Math.max(p.stars,stars);p.plays++;prog[L.mode]=p;store.set('prog',prog);}
+  const td=curToday();td.lessons++;td.xp+=L.gained;store.set('today',td);
+  const task=L.taskId?finishTask(L.taskId):null;
+  const left=tasks.list.filter(t=>!t.done).length;
+  const emo=stars===3?'🏆':stars===2?'🎉':'💪';
+  const msg=stars===3?'全对，太厉害了！':stars===2?'很棒，再接再厉！':'坚持练习，下次更好！';
+  app.innerHTML=`<div class="result"><div class="emo">${emo}</div><h2>${msg}</h2>${starsHTML(stars,'bigstars')}
+    ${task?`<div class="taskdone">📋 完成任务：${esc(taskInfo(task).t)}<br>${left?`今天还剩 ${left} 个任务`:'🎯 今天的任务全部完成，快去打卡！'}</div>`:''}
+    <div class="stats"><div class="stat"><b style="color:#e3a400">+${L.gained}</b><span>经验</span></div>
+      <div class="stat"><b style="color:var(--green-d)">${Math.round(acc*100)}%</b><span>一次答对</span></div>
+      <div class="stat"><b style="color:var(--orange)">${L.maxCombo}</b><span>最多连对</span></div></div>
+    <div class="rbtns">${task&&!left&&!checkins[todayStr()]?'<button class="big orange" id="ci">✅ 去打卡</button>':''}
+      ${L.learn?'':'<button class="big green" id="again">再玩一关</button>'}
+      <button class="big blue" id="back">返回首页</button></div></div>`;
+  const mode=L.mode;
+  const ag=document.getElementById('again');if(ag)ag.onclick=()=>startLesson(mode==='review'&&!mistakeKeys().length?'mix':mode);
+  document.getElementById('back').onclick=home;
+  const ci=document.getElementById('ci');if(ci)ci.onclick=doCheckin;
+  sfx('win');if(stars===3||(task&&!left))confetti();
+}
+function confetti(){
+  const e=['⭐','🎉','✨','🌟','🎈'];
+  for(let i=0;i<32;i++){const s=document.createElement('div');s.className='confetti';s.textContent=e[i%e.length];
+    s.style.left=Math.random()*100+'vw';s.style.animationDuration=(1.8+Math.random()*1.8)+'s';s.style.animationDelay=Math.random()*.6+'s';
+    document.body.appendChild(s);setTimeout(()=>s.remove(),4500);}
+}
+
+document.addEventListener('keydown',e=>{
+  if(screen!=='lesson')return;
+  const c=document.getElementById('cont');
+  if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();c.click();return;}
+  if(/^[1-4]$/.test(e.key)){const b=app.querySelectorAll('.opt')[+e.key-1];if(b&&!b.disabled)b.click();}
+});
+/* 过了午夜回到首页时，自动换成新一天的任务 */
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&screen==='home'&&tasks.date!==todayStr())home();});
+
+if('speechSynthesis' in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices;}
+home();
+</script>
+</body>
+</html>
